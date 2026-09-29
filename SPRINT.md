@@ -6,7 +6,7 @@
 | Origem | `PRD.md` v1.0 + `DESIGN.md` |
 | Idioma docs/dados/UI | pt-BR obrigatório |
 | Idioma código | 100% inglês (variáveis, constantes, funções, classes, módulos) |
-| Estilo código | aspas simples + comentários breves em pt-BR + funções ≤ ~30 linhas + `ruff` |
+| Estilo código | aspas simples + sem comentários + funções ≤ ~30 linhas + `ruff` |
 | Design | Obrigatório `DESIGN.md` (Apple minimalista, 1 acento `#0066cc`) |
 | Execução | `pip install -r requirements.txt` + `streamlit run app.py` |
 
@@ -23,15 +23,13 @@
   - `Regra ID` → `rule_id`, `Par ID` → `match_id`, `Motivo` → `reason`
 - Padrão de código (vale para todas as sprints):
   - `'aspas simples'`, sem `print` debug (usar `logging`), sem código morto.
-  - Comentário breve pt-BR, 1 linha, explica `porquê`.
+  - Sem comentários; código limpo e autoexplicativo.
   - Exemplo válido:
   ```python
-  # normaliza valor BR/US para Decimal
   def normalize_value(raw):
       if raw is None or raw == '':
           return None
       txt = str(raw).strip().replace('R$', '').strip()
-      # trata (2500) como negativo
       if txt.startswith('(') and txt.endswith(')'):
           txt = '-' + txt[1:-1]
       return Decimal(txt)
@@ -67,22 +65,22 @@ Objetivo: repositório executável, determinístico e com gates de qualidade ant
 
 Depende de: nada. RF/RN: NFR-011, NFR-013. NFR-013a.
 
-- [ ] Criar pastas conforme `PRD.md §18`: `src/`, `ui/`, `tests/fixtures/`, `data/examples/`, `data/output/`.
-- [ ] Criar `src/__init__.py`, `ui/__init__.py` vazios com `'...'` ou docstring mínima.
-- [ ] Conferir `requirements.txt` (fonte da verdade, freeze com 43 pacotes — não downgradear): `pandas==3.0.6`, `openpyxl==3.1.5`, `RapidFuzz==3.14.6`, `streamlit==1.64.0`, `pytest==9.1.1` (+ transitivas `numpy==2.5.3`, `pyarrow==25.0.1`).
-- [ ] Preencher `requirements_dev.txt` (hoje vazio): `ruff==0.16.9` + `pytest-cov` (`pytest` já está em `requirements.txt` na v`9.1.1`, não duplicar com `8.3.*`).
-- [ ] Criar `src/config.py` com constantes em inglês:
-  - [ ] `DATE_TOLERANCE_DAYS = 2` # default tolerância de dias
-  - [ ] `FUZZY_THRESHOLD = 85` # default fuzzy 0-100
-  - [ ] `VALUE_TOLERANCE = Decimal('0.00')` # default tolerância de valor
-  - [ ] `MAX_FILE_SIZE_MB = 20` # limite por arquivo
-  - [ ] `MAX_ROWS_WARNING = 20000` # aviso de volume
-  - [ ] `SUPPORTED_EXTENSIONS = ('.csv', '.xls', '.xlsx')` # formatos aceitos
-  - [ ] `PT_REQUIRED_COLUMNS = ('Data', 'Descrição', 'Valor')` # colunas pt-BR obrigatórias
-  - [ ] `APP_VERSION = '1.0.0'` # versão do motor p/ snapshot
-- [ ] Criar `src/logger.py` ou bloco em `config.py` com `get_logger(name)` via `logging` (sem `print`).
-- [ ] Atualizar `.gitignore`: `.venv/`, `data/output/*`, `*.pyc`, `.pytest_cache/`, `.streamlit/secrets.toml`.
-- [ ] Validar `python -m compileall src` + `pip install -r requirements.txt` em ambiente limpo.
+- [x] Criar pastas conforme `PRD.md §18`: `src/`, `ui/`, `tests/fixtures/`, `data/examples/`, `data/output/`.
+- [x] Criar `src/__init__.py`, `ui/__init__.py` vazios com `'...'` ou docstring mínima.
+- [x] Conferir `requirements.txt` (fonte da verdade, somente dependências diretas de prod — não downgradear): `pandas==3.0.6`, `openpyxl==3.1.5`, `RapidFuzz==3.14.6`, `streamlit==1.64.0`.
+- [x] Preencher `requirements_dev.txt`: `ruff==0.16.9` + `pytest==9.1.1` + `pytest-cov`.
+- [x] Criar `src/config.py` com constantes em inglês:
+  - [x] `DATE_TOLERANCE_DAYS = 2` # default tolerância de dias
+  - [x] `FUZZY_THRESHOLD = 85` # default fuzzy 0-100
+  - [x] `VALUE_TOLERANCE = Decimal('0.00')` # default tolerância de valor
+  - [x] `MAX_FILE_SIZE_MB = 20` # limite por arquivo
+  - [x] `MAX_ROWS_WARNING = 20000` # aviso de volume
+  - [x] `SUPPORTED_EXTENSIONS = ('.csv', '.xls', '.xlsx')` # formatos aceitos
+  - [x] `PT_REQUIRED_COLUMNS = ('Data', 'Descrição', 'Valor')` # colunas pt-BR obrigatórias
+  - [x] `APP_VERSION = '1.0.0'` # versão do motor p/ snapshot
+- [x] Criar `src/logger.py` ou bloco em `config.py` com `get_logger(name)` via `logging` (sem `print`).
+- [x] Atualizar `.gitignore`: `.venv/`, `data/output/*`, `*.pyc`, `.pytest_cache/`, `.streamlit/secrets.toml`.
+- [x] Validar `python -m compileall src` + `pip install -r requirements.txt` em ambiente limpo.
 
 Critério de aceite: `pip install -r requirements.txt` instala sem erro em Python 3.10+; `import src.config` expõe os 8 nomes acima; nenhum identificador em português em `src/`.
 
@@ -90,16 +88,16 @@ Critério de aceite: `pip install -r requirements.txt` instala sem erro em Pytho
 
 Depende de: S0-T01. RF: RF-001, RF-002. RN: —.
 
-- [ ] Criar `tests/fixtures/extrato.csv` exatamente:
+- [x] Criar `tests/fixtures/extrato.csv` exatamente:
   ```csv
   Data,Descrição,Valor
   10/09/2026,Pagamento Fornecedor X,-R$ 2.500,00
   11/09/2026,Recebimento Cliente Y,R$ 4.800,00
   ```
-- [ ] Criar `tests/fixtures/interno.xlsx` (aba única) com header `Data | Descrição | Valor` e linhas `10/09/2026 | Fornecedor X NF 1254 | -2500` e `12/09/2026 | Cliente Y | 4800`.
-- [ ] Copiar os dois para `data/examples/` como exemplo de uso.
-- [ ] Criar `tests/fixtures/matrix/` com variações: `latin1_ponto_virgula.csv` (`;` + latin1), `header_minusculo.csv` (`data,descricao,valor`), `valor_parenteses.csv` (`(2500)`), `data_iso.csv` (`2026-09-10`), `vazio.csv`, `invalido.pdf` (para rejeição).
-- [ ] Criar `tests/fixtures/duplicadas.csv` com 2 linhas idênticas de `-1500` para RN-04.
+- [x] Criar `tests/fixtures/interno.xlsx` (aba única) com header `Data | Descrição | Valor` e linhas `10/09/2026 | Fornecedor X NF 1254 | -2500` e `12/09/2026 | Cliente Y | 4800`.
+- [x] Copiar os dois para `data/examples/` como exemplo de uso.
+- [x] Criar `tests/fixtures/matrix/` com variações: `latin1_ponto_virgula.csv` (`;` + latin1), `header_minusculo.csv` (`data,descricao,valor`), `valor_parenteses.csv` (`(2500)`), `data_iso.csv` (`2026-09-10`), `vazio.csv`, `invalido.pdf` (para rejeição).
+- [x] Criar `tests/fixtures/duplicadas.csv` com 2 linhas idênticas de `-1500` para RN-04.
 
 Critério de aceite: fixtures abrem em Excel/LibreOffice com acentos corretos; `extrato.csv` e `interno.xlsx` reproduzem o exemplo do PRD §2.3.
 
@@ -107,15 +105,15 @@ Critério de aceite: fixtures abrem em Excel/LibreOffice com acentos corretos; `
 
 Depende de: S0-T01. RF: —. NFR: NFR-013, NFR-014, NFR-016.
 
-- [ ] Configurar `ruff` (pyproject ou `ruff.toml`): `quote-style = 'single'`, `line-length = 100`, regras `F,E,W,I`.
-- [ ] Criar `tests/test_config.py`: asserts de defaults (`DATE_TOLERANCE_DAYS == 2`, `FUZZY_THRESHOLD == 85`, `VALUE_TOLERANCE == Decimal('0.00')`).
-- [ ] Criar `tests/conftest.py` com fixtures `sample_config` e `fixture_paths`.
-- [ ] Rodar `ruff check src tests` + `pytest -q` verdes antes de S1.
-- [ ] Documentar comandos no `README.md` (instalação + `streamlit run app.py` + `pytest` + `ruff`), tudo em pt-BR, sem jargão.
+- [x] Configurar `ruff` (pyproject ou `ruff.toml`): `quote-style = 'single'`, `line-length = 100`, regras `F,E,W,I`.
+- [x] Criar `tests/test_config.py`: asserts de defaults (`DATE_TOLERANCE_DAYS == 2`, `FUZZY_THRESHOLD == 85`, `VALUE_TOLERANCE == Decimal('0.00')`).
+- [x] Criar `tests/conftest.py` com fixtures `sample_config` e `fixture_paths`.
+- [x] Rodar `ruff check src tests` + `pytest -q` verdes antes de S1.
+- [x] Documentar comandos no `README.md` (instalação + `streamlit run app.py` + `pytest` + `ruff`), tudo em pt-BR, sem jargão.
 
 Critério de aceite: `ruff` sem erro (reprova aspas duplas e identificador pt); `pytest` verde; README permite setup em ≤ 5 min.
 
-DoD S0: estrutura pronta, requirements fixados, fixtures pt-BR criadas, gates verdes.
+DoD S0: estrutura pronta, requirements fixados, fixtures pt-BR criadas, gates verdes. ✅ Concluída.
 
 ---
 
@@ -279,7 +277,7 @@ Arquivos: `ui/styles.css`, `ui/components.py`.
   - [ ] `.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 18px; padding: 24px; }` sem `box-shadow`
   - [ ] `.nav-global { background: #000; height: 44px; }`, `.nav-sub { background: rgba(245,245,247,0.8); backdrop-filter: saturate(180%) blur(20px); height: 52px; }`
   - [ ] `.search { border-radius: 9999px; height: 44px; }`, `.footer { background: #f5f5f7; }`
-- [ ] Criar helpers em `ui/components.py`: `render_header()`, `render_kpi_card(label, value)`, `render_status_table(df)`, todos com aspas simples e comentários pt-BR.
+- [ ] Criar helpers em `ui/components.py`: `render_header()`, `render_kpi_card(label, value)`, `render_status_table(df)`, todos com aspas simples e sem comentários.
 - [ ] Checklist proibições: sem segunda cor, sem gradiente, sem `font-weight: 500`, sem sombra em card/botão, tiles sem radius.
 
 Critério de aceite: `styles.css` usa só tokens; botão primário pill azul 11×22px; cards brancos hairline sem sombra; body 17px.
@@ -382,7 +380,7 @@ Critério de aceite: todos os NFRs com evidência (tempo, log, teste).
   - [ ] valor isolado nunca auto; duplicidade bloqueia; sinal oposto nunca casa
   - [ ] relatórios + KPIs corretos
   - [ ] 5k x 5k < 30s; offline; `pip install` + `streamlit run` OK
-  - [ ] código inglês + aspas simples + comentários pt-BR breves + `ruff` limpo + funções ≤ ~30 linhas
+  - [ ] código inglês + aspas simples + sem comentários + `ruff` limpo + funções ≤ ~30 linhas
   - [ ] `pytest --cov=src` verde, motor ≥ 80%
   - [ ] visual DESIGN.md (body 17px, `#0066cc` único, pill, sem sombra, responsivo)
 - [ ] Finalizar `README.md` pt-BR: o que é, como instalar, como usar (7 passos), formato `Data,Descrição,Valor`, parâmetros, relatórios, solução de erros comuns.
@@ -427,7 +425,7 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 
 ## Ordem de execução sugerida (checklist)
 
-- [ ] S0-T01 → S0-T02 → S0-T03 (gates verdes)
+- [x] S0-T01 → S0-T02 → S0-T03 (gates verdes)
 - [ ] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
 - [ ] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
 - [ ] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)

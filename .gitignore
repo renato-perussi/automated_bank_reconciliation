@@ -171,3 +171,9 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+# Projeto: conciliacao bancaria (S0)
+.venv/
+data/output/*
+*.pyc
+.streamlit/secrets.toml

@@ -231,7 +231,7 @@ flowchart TD
 | NFR-010 | Acessibilidade | Alvo ≥ 44x44, contraste, labels, navegação teclado | Verificação manual |
 | NFR-011 | Portabilidade | Rodar Windows, macOS, Linux Python 3.10+ | `pip install -r requirements.txt` + `streamlit run app.py` |
 | NFR-012 | Compatibilidade | Ler `.csv` (utf-8, latin1, `,`/`;`) e `.xls`/`.xlsx` via `openpyxl` | Matriz de arquivos de teste |
-| NFR-013 | Manutenibilidade / Código | Código 100% em inglês (variáveis, constantes, funções, classes, módulos); aspas simples; comentários breves em pt-BR | `ruff` + revisão reprova português em identificador e aspas duplas desnecessárias |
+| NFR-013 | Manutenibilidade / Código | Código 100% em inglês (variáveis, constantes, funções, classes, módulos); aspas simples; sem comentários | `ruff` + revisão reprova português em identificador e aspas duplas desnecessárias |
 | NFR-013a | Localização pt-BR | Dados e UI 100% em pt-BR: colunas `Data`, `Descrição`, `Valor`; dashboard Streamlit; relatórios exportados; mensagens de erro; arquivos de exemplo | Revisão manual: nenhum label técnico em inglês visível ao usuário |
 | NFR-014 | Manutenibilidade | Cobertura testes motor ≥ 80% | `pytest --cov` |
 | NFR-015 | Resiliência | Falha em 1 linha não aborta lote | Teste com linha corrompida |
@@ -243,18 +243,16 @@ flowchart TD
 - **Dados e UI 100% em pt-BR (consumidor brasileiro):** colunas de entrada/saída `Data`, `Descrição`, `Valor`; labels do dashboard; headers dos relatórios `relatorio_conciliacao.xlsx` / `relatorio_excecoes.csv`; mensagens de erro; arquivos de exemplo `extrato.csv`, `interno.xlsx`. Nenhum termo técnico em inglês visível ao usuário.
 - Camada de mapeamento obrigatória: `loader` lê colunas pt-BR → converte para variáveis internas em inglês → `report` / `ui` reconvertem para pt-BR na exibição/exportação.
 - Usar **aspas simples** em todo Python (`'text'`, não `"text"`), exceto quando string contém aspas simples ou docstrings.
-- **Comentários breves em pt-BR**, máx. 1 linha por bloco, explicando `porquê`, não `o quê`.
+- **Sem comentários**; código limpo e autoexplicativo.
 - Funções responsabilidade única, máx. ~30 linhas; nomes explícitos (`normalize_value`, `compare_pair`).
 - Sem código morto, sem `print` debug; usar `logging`.
 - Formatação via `ruff` ou `black` adaptado para single-quote.
 
 ```python
-# normaliza valor BR/US para Decimal
 def normalize_value(raw):
     if raw is None or raw == '':
         return None
     txt = str(raw).strip().replace('R$', '').strip()
-    # trata (2500) como negativo
     if txt.startswith('(') and txt.endswith(')'):
         txt = '-' + txt[1:-1]
     txt = txt.replace('.', '').replace(',', '.') if ',' in txt else txt
@@ -396,7 +394,7 @@ Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KP
 
 ## 14. Tecnologias
 
-> Fonte da verdade: `requirements.txt` (freeze completo, 43 pacotes) + `requirements_dev.txt` (atualmente vazio). Tabela abaixo reflete os pins reais em 29/09/2026. Não usar versões antigas de rascunhos anteriores (`pandas 2.2.3`, `rapidfuzz 3.10.0`, `streamlit 1.39.0`, `pytest 8.3.x` estão superadas).
+> Fonte da verdade: `requirements.txt` (somente dependências diretas de prod) + `requirements_dev.txt` (`ruff`, `pytest`, `pytest-cov`). Tabela abaixo reflete os pins reais em 29/09/2026. Não usar versões antigas de rascunhos anteriores (`pandas 2.2.3`, `rapidfuzz 3.10.0`, `streamlit 1.39.0`, `pytest 8.3.x` estão superadas).
 
 | Tecnologia | Uso | Versão real (`requirements.txt`) |
 |---|---|---|
@@ -405,10 +403,10 @@ Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KP
 | openpyxl | Leitura/escrita Excel | `3.1.5` |
 | rapidfuzz (`RapidFuzz`) | Fuzzy descrições (`token_set_ratio`) | `3.14.6` |
 | Streamlit | Tela de revisão | `1.64.0` |
-| pytest (+ coverage) | Testes motor (hoje em `requirements.txt`; `requirements_dev.txt` vazio) | `9.1.1` |
-| ruff | Lint + aspas simples (definido em docs, ainda ausente nos requirements — adicionar em dev) | `0.16.9` |
+| pytest (+ coverage) | Testes motor (em `requirements_dev.txt`) | `9.1.1` |
+| ruff | Lint + aspas simples (em `requirements_dev.txt`) | `0.16.9` |
 
-Dependências transitivas relevantes já fixadas no freeze: `numpy==2.5.3`, `pyarrow==25.0.1`, `pillow==12.3.0`, `altair==6.3.0`, `protobuf==7.36.2`. Qualquer upgrade exige reexecução dos testes de matching (Casos A–D).
+Dependências transitivas (`numpy`, `pyarrow`, `pillow`, `altair`, `protobuf`, etc.) resolvidas via `pip` na instalação. Qualquer upgrade exige reexecução dos testes de matching (Casos A–D).
 
 ---
 
@@ -421,7 +419,7 @@ Dependências transitivas relevantes já fixadas no freeze: `numpy==2.5.3`, `pya
 - [ ] Relatórios Excel/CSV com abas/colunas + log.
 - [ ] KPIs exibem % conciliado, revisão, pendente, divergente.
 - [ ] 5k x 5k em < 30s; roda offline via `pip install -r requirements.txt` + `streamlit run app.py`.
-- [ ] Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + clean: aspas simples, comentários breves em pt-BR, funções pequenas, `ruff` limpo. Dados, dashboard, colunas e relatórios 100% em pt-BR.
+- [ ] Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + clean: aspas simples, sem comentários, funções pequenas, `ruff` limpo. Dados, dashboard, colunas e relatórios 100% em pt-BR.
 - [ ] `pytest` verde, cobertura motor ≥80%.
 - [ ] Visual conforme `DESIGN.md`: body 17px, 1 acento `#0066cc`, pill primário, cards sem sombra, responsivo.
 
@@ -436,7 +434,7 @@ Dependências transitivas relevantes já fixadas no freeze: `numpy==2.5.3`, `pya
 - **PM-01:** Arquivos têm ao menos `Data`, `Descrição`, `Valor`.
 - **PM-02:** Mesma moeda; sem conversão cambial.
 - **RS-01:** Design restrito ao `DESIGN.md`.
-- **RS-02:** Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + aspas simples + comentários breves em pt-BR. Dados, dashboard, colunas, relatórios e mensagens 100% em pt-BR.
+- **RS-02:** Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + aspas simples + sem comentários. Dados, dashboard, colunas, relatórios e mensagens 100% em pt-BR.
 - **RS-03:** Limite 20 MB por arquivo no MVP.
 
 ---

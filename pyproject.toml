@@ -1,0 +1,17 @@
+[project]
+name = 'automated-bank-reconciliation'
+version = '1.0.0'
+description = 'Conciliacao bancaria automatizada local'
+requires-python = '>=3.10'
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ['F', 'E', 'W', 'I']
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
