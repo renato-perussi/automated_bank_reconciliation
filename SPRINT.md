@@ -200,17 +200,17 @@ Objetivo: regra composta valor+sinal+data+fuzzy com zero auto por valor isolado 
 
 Arquivo: `src/matcher.py`. Constantes de `src/config.py`.
 
-- [ ] `build_params(date_tolerance_days=2, fuzzy_threshold=85, value_tolerance=Decimal('0.00'), use_fuzzy=True)` validando ranges `0–30`, `0–100`, `>=0`.
-- [ ] `find_candidates(statement_df, ledger_df, params)`:
-  - [ ] bloqueio (blocking) por `normalized_amount (± value_tolerance)` + `sign` igual — nunca comparar tudo contra tudo
-  - [ ] filtro `abs((statement_date - ledger_date).days) <= date_tolerance_days`
-  - [ ] RN-03: `sign` diferente bloqueia, mesmo com valor/data iguais (Caso D)
-  - [ ] RN-01: valor igual sozinho nunca gera `auto`; no máx. `potential`
-  - [ ] retornar lista de tuplas `(statement_idx, ledger_idx, day_diff, value_diff)`
-- [ ] `calc_value_diff(a, b)` com `Decimal` (sem float).
-- [ ] Teste Caso B: `11/09 +4800` x `12/09 +4800` com default casa (`day_diff=1`); com `date_tolerance_days=0` não casa.
-- [ ] Teste Caso D: `-2500` x `+2500` nunca casa.
-- [ ] Benchmark 5k x 5k < 30s via blocking (NFR-001); se > 20k linhas emitir aviso pt-BR.
+- [x] `build_params(date_tolerance_days=2, fuzzy_threshold=85, value_tolerance=Decimal('0.00'), use_fuzzy=True)` validando ranges `0–30`, `0–100`, `>=0`.
+- [x] `find_candidates(statement_df, ledger_df, params)`:
+  - [x] bloqueio (blocking) por `normalized_amount (± value_tolerance)` + `sign` igual — nunca comparar tudo contra tudo
+  - [x] filtro `abs((statement_date - ledger_date).days) <= date_tolerance_days`
+  - [x] RN-03: `sign` diferente bloqueia, mesmo com valor/data iguais (Caso D)
+  - [x] RN-01: valor igual sozinho nunca gera `auto`; no máx. `potential`
+  - [x] retornar lista de tuplas `(statement_idx, ledger_idx, day_diff, value_diff)`
+- [x] `calc_value_diff(a, b)` com `Decimal` (sem float).
+- [x] Teste Caso B: `11/09 +4800` x `12/09 +4800` com default casa (`day_diff=1`); com `date_tolerance_days=0` não casa.
+- [x] Teste Caso D: `-2500` x `+2500` nunca casa.
+- [x] Benchmark 5k x 5k < 30s via blocking (NFR-001); se > 20k linhas emitir aviso pt-BR.
 
 Critério de aceite: RF-011/012/013 — exato casa, tolerância respeitada, sinal oposto bloqueia; performance com blocking.
 
@@ -218,11 +218,11 @@ Critério de aceite: RF-011/012/013 — exato casa, tolerância respeitada, sina
 
 Arquivo: `src/matcher.py` (continuação).
 
-- [ ] `score_description(a_norm, b_norm)` usando `rapidfuzz.fuzz.token_set_ratio` (fallback `WRatio` documentado).
-- [ ] Respeitar `fuzzy_threshold` default 85 e `use_fuzzy=False` (descrição ignorada).
-- [ ] Anexar `description_score` 0–100 a cada candidato de S2-T01.
-- [ ] Caso A: `Pagamento Fornecedor X` x `Fornecedor X NF 1254` gera score < 85 → não auto (vai para revisão); se threshold reduzido ou fuzzy off + 1:1 → pode auto.
-- [ ] Garantir execução local sem rede (NFR-005).
+- [x] `score_description(a_norm, b_norm)` usando `rapidfuzz.fuzz.token_set_ratio` (fallback `WRatio` documentado).
+- [x] Respeitar `fuzzy_threshold` default 85 e `use_fuzzy=False` (descrição ignorada).
+- [x] Anexar `description_score` 0–100 a cada candidato de S2-T01.
+- [x] Caso A: `Pagamento Fornecedor X` x `Fornecedor X NF 1254` gera score < 85 → não auto (vai para revisão); se threshold reduzido ou fuzzy off + 1:1 → pode auto.
+- [x] Garantir execução local sem rede (NFR-005).
 
 Critério de aceite: RF-015 — score exibido na revisão; abaixo do threshold não eleva para automática.
 
@@ -230,16 +230,16 @@ Critério de aceite: RF-015 — score exibido na revisão; abaixo do threshold n
 
 Arquivo: `src/classifier.py`.
 
-- [ ] `detect_duplicates(df, params)`:
-  - [ ] mesmo `normalized_amount` + `sign` + `day_diff <= date_tolerance_days` + `description_score >= 95` na mesma base → `duplicada_suspeita`
-  - [ ] duplicada nunca auto, exige revisão
-- [ ] `classify_match(candidate, params, has_ambiguity, is_duplicate)`:
-  - [ ] `auto` sse: valor+sinal OK **E** data dentro tolerância **E** (fuzzy ≥ threshold **OU** fuzzy off + 1:1 sem ambiguidade) **E** sem duplicidade **E** 1 candidato (RN-06)
-  - [ ] senão: `potential` se ≥1 candidato próximo (data limite ou fuzzy 60–threshold ou múltiplos); `pending` se nenhum; `divergent` se `value_diff <= value_tolerance` mas ≠ 0 (ex.: `2500.00` x `2500.04` com `0.05` → `potential` motivo `'divergencia_centavos'`)
-  - [ ] status internos em inglês: `'auto'`, `'potential'`, `'pending'`, `'divergent'`, `'duplicate'`; UI exibe pt-BR `Conciliada`, `Para revisão`, `Pendente`, `Divergente`, `Duplicada`
-- [ ] `resolve_ambiguity(candidates)` (RN-07): 1:N/N:1 escolhe menor `day_diff`, depois maior `description_score`; demais viram `potential` motivo `'ambiguidade_multipla'`; nunca auto em ambiguidade.
-- [ ] `build_result_tables(...)` retornando 5 DataFrames + `reason` (`rule_id` RN-01…RN-08 + snapshot params).
-- [ ] Caso C: dois `-1500` distintos → nunca auto + alerta ambiguidade.
+- [x] `detect_duplicates(df, params)`:
+  - [x] mesmo `normalized_amount` + `sign` + `day_diff <= date_tolerance_days` + `description_score >= 95` na mesma base → `duplicada_suspeita`
+  - [x] duplicada nunca auto, exige revisão
+- [x] `classify_match(candidate, params, has_ambiguity, is_duplicate)`:
+  - [x] `auto` sse: valor+sinal OK **E** data dentro tolerância **E** (fuzzy ≥ threshold **OU** fuzzy off + 1:1 sem ambiguidade) **E** sem duplicidade **E** 1 candidato (RN-06)
+  - [x] senão: `potential` se ≥1 candidato próximo (data limite ou fuzzy 60–threshold ou múltiplos); `pending` se nenhum; `divergent` se `value_diff <= value_tolerance` mas ≠ 0 (ex.: `2500.00` x `2500.04` com `0.05` → `potential` motivo `'divergencia_centavos'`)
+  - [x] status internos em inglês: `'auto'`, `'potential'`, `'pending'`, `'divergent'`, `'duplicate'`; UI exibe pt-BR `Conciliada`, `Para revisão`, `Pendente`, `Divergente`, `Duplicada`
+- [x] `resolve_ambiguity(candidates)` (RN-07): 1:N/N:1 escolhe menor `day_diff`, depois maior `description_score`; demais viram `potential` motivo `'ambiguidade_multipla'`; nunca auto em ambiguidade.
+- [x] `build_result_tables(...)` retornando 5 DataFrames + `reason` (`rule_id` RN-01…RN-08 + snapshot params).
+- [x] Caso C: dois `-1500` distintos → nunca auto + alerta ambiguidade.
 
 Critério de aceite: RF-014/RF-016 — 5 estados corretos; duplicada bloqueia auto; ambiguidade nunca auto; centavos viram revisão, não auto.
 
@@ -247,18 +247,18 @@ Critério de aceite: RF-014/RF-016 — 5 estados corretos; duplicada bloqueia au
 
 Arquivos: `tests/test_matcher.py`, `tests/test_classifier.py`.
 
-- [ ] Teste Caso A (exato com descrição divergente): `day_diff=0`, `value_diff=0` → `potential` se fuzzy < 85, `auto` se ≥ 85.
-- [ ] Teste Caso B (tolerância): `day_diff=1` → `auto` com default.
-- [ ] Teste armadilha valor (NFR-007): 2 transações distintas mesmo valor, datas fora ou múltiplos candidatos → zero `auto`.
-- [ ] Teste sinal (Caso D): bloqueado.
-- [ ] Teste duplicidade: fixture `duplicadas.csv` → `duplicate` + sem `auto`.
-- [ ] Teste tolerância valor: `2500.00` x `2500.04` com `0.05` → `potential` + `'divergencia_centavos'`; com `0.00` → sem match de valor.
-- [ ] Teste idempotência: mesmos arquivos + params → mesmo resultado (hash).
-- [ ] Cobertura motor ≥ 80% (`pytest --cov=src --cov-report=term`).
+- [x] Teste Caso A (exato com descrição divergente): `day_diff=0`, `value_diff=0` → `potential` se fuzzy < 85, `auto` se ≥ 85.
+- [x] Teste Caso B (tolerância): `day_diff=1` → `auto` com default.
+- [x] Teste armadilha valor (NFR-007): 2 transações distintas mesmo valor, datas fora ou múltiplos candidatos → zero `auto`.
+- [x] Teste sinal (Caso D): bloqueado.
+- [x] Teste duplicidade: fixture `duplicadas.csv` → `duplicate` + sem `auto`.
+- [x] Teste tolerância valor: `2500.00` x `2500.04` com `0.05` → `potential` + `'divergencia_centavos'`; com `0.00` → sem match de valor.
+- [x] Teste idempotência: mesmos arquivos + params → mesmo resultado (hash).
+- [x] Cobertura motor ≥ 80% (`pytest --cov=src --cov-report=term`).
 
 Critério de aceite: todos os Casos A–D do PRD §9.1 reproduzidos; `pytest` verde; < 30s para 5k x 5k.
 
-DoD S2: motor determinístico, auditável, sem falso positivo por valor isolado, com `rule_id` em toda decisão.
+DoD S2: motor determinístico, auditável, sem falso positivo por valor isolado, com `rule_id` em toda decisão. ✅ Concluída.
 
 ---
 
@@ -427,7 +427,7 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 
 - [x] S0-T01 → S0-T02 → S0-T03 (gates verdes)
 - [x] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
-- [ ] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
+- [x] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
 - [ ] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
 - [ ] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
 
