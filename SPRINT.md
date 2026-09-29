@@ -1,0 +1,436 @@
+# SPRINT.md — Conciliação Bancária Automatizada
+## `automated_bank_reconciliation`
+
+| Campo | Valor |
+|---|---|
+| Origem | `PRD.md` v1.0 + `DESIGN.md` |
+| Idioma docs/dados/UI | pt-BR obrigatório |
+| Idioma código | 100% inglês (variáveis, constantes, funções, classes, módulos) |
+| Estilo código | aspas simples + comentários breves em pt-BR + funções ≤ ~30 linhas + `ruff` |
+| Design | Obrigatório `DESIGN.md` (Apple minimalista, 1 acento `#0066cc`) |
+| Execução | `pip install -r requirements.txt` + `streamlit run app.py` |
+
+---
+
+## Convenções
+
+- Sprint: `S0` … `S4`. Task: `S{N}-T{NN}`. Subtask: checkbox `- [ ]`.
+- Todo identificador de código nos exemplos está em inglês. Todo label/UI/coluna/mensagem está em pt-BR.
+- Mapeamento interno obrigatório: coluna pt-BR → variável em inglês → exibição pt-BR.
+  - `Data` → `normalized_date` / `day_diff` / `date_tolerance_days`
+  - `Descrição` → `normalized_description` / `description_score` / `fuzzy_threshold`
+  - `Valor` → `normalized_value` / `value_diff` / `value_tolerance`
+  - `Regra ID` → `rule_id`, `Par ID` → `match_id`, `Motivo` → `reason`
+- Padrão de código (vale para todas as sprints):
+  - `'aspas simples'`, sem `print` debug (usar `logging`), sem código morto.
+  - Comentário breve pt-BR, 1 linha, explica `porquê`.
+  - Exemplo válido:
+  ```python
+  # normaliza valor BR/US para Decimal
+  def normalize_value(raw):
+      if raw is None or raw == '':
+          return None
+      txt = str(raw).strip().replace('R$', '').strip()
+      # trata (2500) como negativo
+      if txt.startswith('(') and txt.endswith(')'):
+          txt = '-' + txt[1:-1]
+      return Decimal(txt)
+  ```
+- Padrão DESIGN (vale para toda UI):
+  - Cores: `{colors.primary}` `#0066cc` único acento, `{colors.canvas}` `#ffffff`, `{colors.canvas-parchment}` `#f5f5f7`, `{colors.ink}` `#1d1d1f`.
+  - Tipo: `{typography.body}` 17px/400/1.47, headlines 600 com tracking negativo, weight 500 proibido.
+  - Formas: `{rounded.pill}` 9999px para CTA primário, `{rounded.lg}` 18px para cards, tiles full-bleed sem radius.
+  - Sem sombra em cards/botões. Sombra única só em render de produto.
+  - Componentes: `{component.global-nav}`, `{component.sub-nav-frosted}`, `{component.button-primary}`, `{component.store-utility-card}`, `{component.search-input}`, `{component.floating-sticky-bar}`, `{component.footer}`.
+
+---
+
+## Visão das sprints
+
+| Sprint | Foco | RFs | RNs | Entrega verificável |
+|---|---|---|---|---|
+| S0 | Base, config, fixtures, qualidade | — | — | Pastas + `config.py` + fixtures + `pytest`/`ruff` verdes |
+| S1 | Ingestão + normalização + validação | RF-001 – RF-007 | RN-02, RN-03 (base), RN-09 (erros) | `loader.py` + `normalize.py` + preview 5 linhas + tabela de erros |
+| S2 | Motor: matching + classificação | RF-008 – RF-016 | RN-01 – RN-08, RN-10 (base) | `matcher.py` + `classifier.py` + Casos A–D verdes + sem auto por valor isolado |
+| S3 | UI Streamlit + DESIGN.md | RF-017, RF-018, RF-022, T-01 – T-06 | — | App navegável 7 cliques, KPIs, revisão lado a lado, responsivo |
+| S4 | Relatórios + auditoria + hardening + DoD | RF-019 – RF-021, T-07 – T-08 | RN-09, RN-10 | `relatorio_conciliacao.xlsx` + `relatorio_excecoes.csv` + DoD 100% |
+
+Ordem de execução: `S0 → S1 → S2 → S3 → S4`. S3 pode iniciar mockada após S1, mas só fecha após S2.
+
+---
+
+## S0 — Base e fundação
+
+Objetivo: repositório executável, determinístico e com gates de qualidade antes de qualquer regra de negócio.
+
+### S0-T01 — Estrutura, dependências e config
+
+Depende de: nada. RF/RN: NFR-011, NFR-013. NFR-013a.
+
+- [ ] Criar pastas conforme `PRD.md §18`: `src/`, `ui/`, `tests/fixtures/`, `data/examples/`, `data/output/`.
+- [ ] Criar `src/__init__.py`, `ui/__init__.py` vazios com `'...'` ou docstring mínima.
+- [ ] Conferir `requirements.txt` (fonte da verdade, freeze com 43 pacotes — não downgradear): `pandas==3.0.6`, `openpyxl==3.1.5`, `RapidFuzz==3.14.6`, `streamlit==1.64.0`, `pytest==9.1.1` (+ transitivas `numpy==2.5.3`, `pyarrow==25.0.1`).
+- [ ] Preencher `requirements_dev.txt` (hoje vazio): `ruff==0.16.9` + `pytest-cov` (`pytest` já está em `requirements.txt` na v`9.1.1`, não duplicar com `8.3.*`).
+- [ ] Criar `src/config.py` com constantes em inglês:
+  - [ ] `DATE_TOLERANCE_DAYS = 2` # default tolerância de dias
+  - [ ] `FUZZY_THRESHOLD = 85` # default fuzzy 0-100
+  - [ ] `VALUE_TOLERANCE = Decimal('0.00')` # default tolerância de valor
+  - [ ] `MAX_FILE_SIZE_MB = 20` # limite por arquivo
+  - [ ] `MAX_ROWS_WARNING = 20000` # aviso de volume
+  - [ ] `SUPPORTED_EXTENSIONS = ('.csv', '.xls', '.xlsx')` # formatos aceitos
+  - [ ] `PT_REQUIRED_COLUMNS = ('Data', 'Descrição', 'Valor')` # colunas pt-BR obrigatórias
+  - [ ] `APP_VERSION = '1.0.0'` # versão do motor p/ snapshot
+- [ ] Criar `src/logger.py` ou bloco em `config.py` com `get_logger(name)` via `logging` (sem `print`).
+- [ ] Atualizar `.gitignore`: `.venv/`, `data/output/*`, `*.pyc`, `.pytest_cache/`, `.streamlit/secrets.toml`.
+- [ ] Validar `python -m compileall src` + `pip install -r requirements.txt` em ambiente limpo.
+
+Critério de aceite: `pip install -r requirements.txt` instala sem erro em Python 3.10+; `import src.config` expõe os 8 nomes acima; nenhum identificador em português em `src/`.
+
+### S0-T02 — Fixtures de dados pt-BR + exemplos mínimos
+
+Depende de: S0-T01. RF: RF-001, RF-002. RN: —.
+
+- [ ] Criar `tests/fixtures/extrato.csv` exatamente:
+  ```csv
+  Data,Descrição,Valor
+  10/09/2026,Pagamento Fornecedor X,-R$ 2.500,00
+  11/09/2026,Recebimento Cliente Y,R$ 4.800,00
+  ```
+- [ ] Criar `tests/fixtures/interno.xlsx` (aba única) com header `Data | Descrição | Valor` e linhas `10/09/2026 | Fornecedor X NF 1254 | -2500` e `12/09/2026 | Cliente Y | 4800`.
+- [ ] Copiar os dois para `data/examples/` como exemplo de uso.
+- [ ] Criar `tests/fixtures/matrix/` com variações: `latin1_ponto_virgula.csv` (`;` + latin1), `header_minusculo.csv` (`data,descricao,valor`), `valor_parenteses.csv` (`(2500)`), `data_iso.csv` (`2026-09-10`), `vazio.csv`, `invalido.pdf` (para rejeição).
+- [ ] Criar `tests/fixtures/duplicadas.csv` com 2 linhas idênticas de `-1500` para RN-04.
+
+Critério de aceite: fixtures abrem em Excel/LibreOffice com acentos corretos; `extrato.csv` e `interno.xlsx` reproduzem o exemplo do PRD §2.3.
+
+### S0-T03 — Qualidade: ruff single-quote + pytest + idempotência base
+
+Depende de: S0-T01. RF: —. NFR: NFR-013, NFR-014, NFR-016.
+
+- [ ] Configurar `ruff` (pyproject ou `ruff.toml`): `quote-style = 'single'`, `line-length = 100`, regras `F,E,W,I`.
+- [ ] Criar `tests/test_config.py`: asserts de defaults (`DATE_TOLERANCE_DAYS == 2`, `FUZZY_THRESHOLD == 85`, `VALUE_TOLERANCE == Decimal('0.00')`).
+- [ ] Criar `tests/conftest.py` com fixtures `sample_config` e `fixture_paths`.
+- [ ] Rodar `ruff check src tests` + `pytest -q` verdes antes de S1.
+- [ ] Documentar comandos no `README.md` (instalação + `streamlit run app.py` + `pytest` + `ruff`), tudo em pt-BR, sem jargão.
+
+Critério de aceite: `ruff` sem erro (reprova aspas duplas e identificador pt); `pytest` verde; README permite setup em ≤ 5 min.
+
+DoD S0: estrutura pronta, requirements fixados, fixtures pt-BR criadas, gates verdes.
+
+---
+
+## S1 — Ingestão, mapeamento e normalização (RF-001 – RF-007)
+
+Objetivo: dois arquivos heterogêneos viram duas tabelas limpas `statement` x `ledger` com erros isolados.
+
+### S1-T01 — Loader: leitura CSV/Excel + limites + preview (RF-001, RF-002, RF-004)
+
+Arquivo: `src/loader.py`. Funções em inglês, mensagens pt-BR.
+
+- [ ] Implementar `detect_encoding(path)` tentando `'utf-8'` → `'latin1'`.
+- [ ] Implementar `detect_delimiter(path, encoding)` tentando `','` → `';'` (amostra 5 linhas).
+- [ ] Implementar `load_table(path)`:
+  - [ ] validar extensão em `SUPPORTED_EXTENSIONS`, senão erro pt-BR `'Formato não suportado. Envie CSV ou Excel.'`
+  - [ ] validar tamanho `<= MAX_FILE_SIZE_MB`, senão erro pt-BR `'Arquivo acima de 20 MB.'`
+  - [ ] CSV via `pandas.read_csv` com encoding/delimiter detectados; Excel via `pandas.read_excel(engine='openpyxl')` primeira aba
+  - [ ] retornar `DataFrame` bruto + metadados (`encoding`, `delimiter`, `sheet`)
+- [ ] Implementar `get_preview(df, n=5)` retornando 5 primeiras linhas para UI.
+- [ ] Implementar `validate_not_empty(df)` gerando erro bloqueante pt-BR `'Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor.'`
+- [ ] Sanitizar nome de arquivo contra path traversal (NFR-006).
+- [ ] Testar com `matrix/` do S0-T02 + arquivo 20 MB (preview < 3s, NFR-002).
+
+Critério de aceite: RF-001/RF-002 — 3 formatos abrem, preview 5 linhas, `.pdf` rejeitado com mensagem pt-BR clara; arquivo vazio bloqueia.
+
+### S1-T02 — Mapeamento de colunas pt-BR → variáveis em inglês (RF-003)
+
+Arquivo: `src/loader.py` (continuação) ou `src/mapping.py`.
+
+- [ ] Implementar `normalize_header(name)` removendo acento, caixa, espaços (`'Descrição'` → `'descricao'`, `'Valor'` → `'valor'`, `'Data'` → `'data'`, `'Historico'` → `'historico'`, `'Amount'` → `'valor'`).
+- [ ] Implementar `auto_map_columns(df)` com dicionário:
+  - [ ] data: `{'data', 'date', 'dt', 'data_lancamento'}`
+  - [ ] descrição: `{'descricao', 'descrição', 'historico', 'histórico', 'description', 'memo'}`
+  - [ ] valor: `{'valor', 'value', 'amount', 'montante'}`
+- [ ] Implementar `apply_mapping(df, mapping)` retornando colunas internas `event_date`, `description`, `amount` preservando originais `Data`, `Descrição`, `Valor`.
+- [ ] Se alguma obrigatória ausente, levantar erro pt-BR `'Coluna obrigatória não encontrada: Valor. Mapeie manualmente.'` e bloquear execução.
+- [ ] Expor `get_mapping_options(df)` para os `selectbox` da UI (T-02).
+
+Critério de aceite: RF-003 — auto-detecção acerta `data/descricao/valor` e minúsculas; correção manual possível; sem mapeamento completo não executa matching.
+
+### S1-T03 — Normalização: data, valor+sinal, descrição (RF-005, RF-006, RF-007 + RN-03)
+
+Arquivo: `src/normalize.py`.
+
+- [ ] `normalize_date(raw)`:
+  - [ ] aceita `DD/MM/YYYY`, `YYYY-MM-DD`, `DD-MM-YYYY`, `datetime` Excel → `date` ISO `YYYY-MM-DD`
+  - [ ] inválida → `None` + código `'DATA_INVALIDA'`
+- [ ] `normalize_amount(raw)`:
+  - [ ] trata `'R$ 2.500,00'`, `'2500.00'`, `'(2500)'` → negativo, `'-2500'`, `'2.500 D'` → negativo, `'2.500 C'` → positivo
+  - [ ] retorna `Decimal` + preserva `raw`; inválido → `None` + `'VALOR_INVALIDO'`
+- [ ] `detect_sign(normalized_value, raw_text)`:
+  - [ ] débito: `'-'`, `'D'`, `'DEB'`, `'SAIDA'`, `'(...)'` → `-1`; crédito: `'+'`, `'C'`, `'CRED'`, `'ENTRADA'` → `+1`
+  - [ ] documentar precedência: sinal explícito vence; parênteses sempre débito
+- [ ] `normalize_description(raw)`:
+  - [ ] lower, remove acento, pontuação, espaços duplos → forma canônica; preserva original para exibição
+  - [ ] ex.: `'Pagamento Fornecedor X'` e `'fornecedor x nf 1254'` viram formas comparáveis sem perder original
+- [ ] `normalize_table(df_mapped)` aplicando as 3 + `sign`, gerando `normalized_date`, `normalized_amount`, `normalized_description`, `sign`, `row_hash`, `source` (`'statement'` | `'ledger'`).
+- [ ] Linhas com `None` vão para tabela de erros com `error_code` (`'DATA_INVALIDA'`, `'VALOR_INVALIDO'`, `'COLUNA_AUSENTE'`), não participam do matching.
+
+Critério de aceite: RF-005/006/007 — matriz de formatos do S0 passa; `10/09/2026` vira `2026-09-10`; `-R$ 2.500,00` vira `Decimal('-2500')` + `sign=-1`; descrições preservam original.
+
+### S1-T04 — Validação linha a linha + testes (RF-004 + NFR-015)
+
+Arquivos: `src/validate.py` (ou dentro de `normalize.py`) + `tests/test_loader.py` + `tests/test_normalize.py`.
+
+- [ ] `collect_errors(df_normalized)` separando `valid_df` x `error_df` com colunas pt-BR `Linha`, `Motivo`, `Orientação`.
+- [ ] Mensagens pt-BR acionáveis: `'Data inválida na linha 7. Use DD/MM/AAAA.'`, `'Valor inválido na linha 9. Ex.: -R$ 2.500,00.'`
+- [ ] Garantir 1 linha corrompida não aborta lote (NFR-015).
+- [ ] Testes `test_loader.py`: 3 formatos, `;`+latin1, rejeição pdf, vazio bloqueante, limite 20 MB.
+- [ ] Testes `test_normalize.py`: datas (4 formatos + inválida), valores (6 formatos + inválido), sinais D/C/parênteses, descrição canônica.
+- [ ] Cobertura `normalize` + `loader` ≥ 80%.
+
+Critério de aceite: RF-004 — erros listados por linha com motivo; linhas com erro fora do matching; 1 linha ruim não quebra lote.
+
+DoD S1: fixtures do PRD normalizam sem erro; `pytest tests/test_loader.py tests/test_normalize.py` verdes; `ruff` limpo; nenhum label inglês vaza para erro.
+
+---
+
+## S2 — Motor de conciliação (RF-008 – RF-016 + RN-01 – RN-08)
+
+Objetivo: regra composta valor+sinal+data+fuzzy com zero auto por valor isolado e desempate determinístico.
+
+### S2-T01 — Parâmetros + bloqueio por valor+sinal + janela de data (RF-008, RF-010, RF-011, RF-012, RF-013)
+
+Arquivo: `src/matcher.py`. Constantes de `src/config.py`.
+
+- [ ] `build_params(date_tolerance_days=2, fuzzy_threshold=85, value_tolerance=Decimal('0.00'), use_fuzzy=True)` validando ranges `0–30`, `0–100`, `>=0`.
+- [ ] `find_candidates(statement_df, ledger_df, params)`:
+  - [ ] bloqueio (blocking) por `normalized_amount (± value_tolerance)` + `sign` igual — nunca comparar tudo contra tudo
+  - [ ] filtro `abs((statement_date - ledger_date).days) <= date_tolerance_days`
+  - [ ] RN-03: `sign` diferente bloqueia, mesmo com valor/data iguais (Caso D)
+  - [ ] RN-01: valor igual sozinho nunca gera `auto`; no máx. `potential`
+  - [ ] retornar lista de tuplas `(statement_idx, ledger_idx, day_diff, value_diff)`
+- [ ] `calc_value_diff(a, b)` com `Decimal` (sem float).
+- [ ] Teste Caso B: `11/09 +4800` x `12/09 +4800` com default casa (`day_diff=1`); com `date_tolerance_days=0` não casa.
+- [ ] Teste Caso D: `-2500` x `+2500` nunca casa.
+- [ ] Benchmark 5k x 5k < 30s via blocking (NFR-001); se > 20k linhas emitir aviso pt-BR.
+
+Critério de aceite: RF-011/012/013 — exato casa, tolerância respeitada, sinal oposto bloqueia; performance com blocking.
+
+### S2-T02 — Fuzzy de descrição com rapidfuzz (RF-015 + RN-05)
+
+Arquivo: `src/matcher.py` (continuação).
+
+- [ ] `score_description(a_norm, b_norm)` usando `rapidfuzz.fuzz.token_set_ratio` (fallback `WRatio` documentado).
+- [ ] Respeitar `fuzzy_threshold` default 85 e `use_fuzzy=False` (descrição ignorada).
+- [ ] Anexar `description_score` 0–100 a cada candidato de S2-T01.
+- [ ] Caso A: `Pagamento Fornecedor X` x `Fornecedor X NF 1254` gera score < 85 → não auto (vai para revisão); se threshold reduzido ou fuzzy off + 1:1 → pode auto.
+- [ ] Garantir execução local sem rede (NFR-005).
+
+Critério de aceite: RF-015 — score exibido na revisão; abaixo do threshold não eleva para automática.
+
+### S2-T03 — Classificador 5 estados + desempate + duplicadas (RF-014, RF-016 + RN-04, RN-06, RN-07, RN-08)
+
+Arquivo: `src/classifier.py`.
+
+- [ ] `detect_duplicates(df, params)`:
+  - [ ] mesmo `normalized_amount` + `sign` + `day_diff <= date_tolerance_days` + `description_score >= 95` na mesma base → `duplicada_suspeita`
+  - [ ] duplicada nunca auto, exige revisão
+- [ ] `classify_match(candidate, params, has_ambiguity, is_duplicate)`:
+  - [ ] `auto` sse: valor+sinal OK **E** data dentro tolerância **E** (fuzzy ≥ threshold **OU** fuzzy off + 1:1 sem ambiguidade) **E** sem duplicidade **E** 1 candidato (RN-06)
+  - [ ] senão: `potential` se ≥1 candidato próximo (data limite ou fuzzy 60–threshold ou múltiplos); `pending` se nenhum; `divergent` se `value_diff <= value_tolerance` mas ≠ 0 (ex.: `2500.00` x `2500.04` com `0.05` → `potential` motivo `'divergencia_centavos'`)
+  - [ ] status internos em inglês: `'auto'`, `'potential'`, `'pending'`, `'divergent'`, `'duplicate'`; UI exibe pt-BR `Conciliada`, `Para revisão`, `Pendente`, `Divergente`, `Duplicada`
+- [ ] `resolve_ambiguity(candidates)` (RN-07): 1:N/N:1 escolhe menor `day_diff`, depois maior `description_score`; demais viram `potential` motivo `'ambiguidade_multipla'`; nunca auto em ambiguidade.
+- [ ] `build_result_tables(...)` retornando 5 DataFrames + `reason` (`rule_id` RN-01…RN-08 + snapshot params).
+- [ ] Caso C: dois `-1500` distintos → nunca auto + alerta ambiguidade.
+
+Critério de aceite: RF-014/RF-016 — 5 estados corretos; duplicada bloqueia auto; ambiguidade nunca auto; centavos viram revisão, não auto.
+
+### S2-T04 — Testes do motor + armadilhas (RN-01, RN-06, NFR-007, NFR-014)
+
+Arquivos: `tests/test_matcher.py`, `tests/test_classifier.py`.
+
+- [ ] Teste Caso A (exato com descrição divergente): `day_diff=0`, `value_diff=0` → `potential` se fuzzy < 85, `auto` se ≥ 85.
+- [ ] Teste Caso B (tolerância): `day_diff=1` → `auto` com default.
+- [ ] Teste armadilha valor (NFR-007): 2 transações distintas mesmo valor, datas fora ou múltiplos candidatos → zero `auto`.
+- [ ] Teste sinal (Caso D): bloqueado.
+- [ ] Teste duplicidade: fixture `duplicadas.csv` → `duplicate` + sem `auto`.
+- [ ] Teste tolerância valor: `2500.00` x `2500.04` com `0.05` → `potential` + `'divergencia_centavos'`; com `0.00` → sem match de valor.
+- [ ] Teste idempotência: mesmos arquivos + params → mesmo resultado (hash).
+- [ ] Cobertura motor ≥ 80% (`pytest --cov=src --cov-report=term`).
+
+Critério de aceite: todos os Casos A–D do PRD §9.1 reproduzidos; `pytest` verde; < 30s para 5k x 5k.
+
+DoD S2: motor determinístico, auditável, sem falso positivo por valor isolado, com `rule_id` em toda decisão.
+
+---
+
+## S3 — UI Streamlit + DESIGN.md (RF-017, RF-018, RF-022 + T-01 – T-06)
+
+Objetivo: fluxo em ≤ 7 cliques, todo em pt-BR, todo dentro dos tokens Apple.
+
+### S3-T01 — Fundação visual: styles.css com tokens (NFR-009, NFR-010)
+
+Arquivos: `ui/styles.css`, `ui/components.py`.
+
+- [ ] Criar `ui/styles.css` com variáveis:
+  - [ ] `--primary: #0066cc` (`{colors.primary}`), `--primary-focus: #0071e3`, `--canvas: #ffffff`, `--parchment: #f5f5f7`, `--ink: #1d1d1f`
+  - [ ] fonte `SF Pro Display, SF Pro Text, system-ui, -apple-system, Inter, sans-serif`; body 17px/1.47, `-0.374px` em display
+  - [ ] `.btn-primary { background: var(--primary); border-radius: 9999px; padding: 11px 22px; }` + `:active { transform: scale(0.95); }` + `:focus { outline: 2px solid var(--primary-focus); }`
+  - [ ] `.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 18px; padding: 24px; }` sem `box-shadow`
+  - [ ] `.nav-global { background: #000; height: 44px; }`, `.nav-sub { background: rgba(245,245,247,0.8); backdrop-filter: saturate(180%) blur(20px); height: 52px; }`
+  - [ ] `.search { border-radius: 9999px; height: 44px; }`, `.footer { background: #f5f5f7; }`
+- [ ] Criar helpers em `ui/components.py`: `render_header()`, `render_kpi_card(label, value)`, `render_status_table(df)`, todos com aspas simples e comentários pt-BR.
+- [ ] Checklist proibições: sem segunda cor, sem gradiente, sem `font-weight: 500`, sem sombra em card/botão, tiles sem radius.
+
+Critério de aceite: `styles.css` usa só tokens; botão primário pill azul 11×22px; cards brancos hairline sem sombra; body 17px.
+
+### S3-T02 — T-01 Header + T-02 Upload + T-03 Parâmetros
+
+Arquivo: `app.py` (etapas 1–3).
+
+- [ ] T-01 Header: `{component.global-nav}` 44px preta + `{component.sub-nav-frosted}` com steps pt-BR `'1 Upload → 2 Parâmetros → 3 Resultados'`; título `'Conciliação Bancária'` em `{typography.display-lg}`.
+- [ ] T-02 Upload (`{component.store-utility-card}`):
+  - [ ] dois `st.file_uploader` lado a lado: `'Extrato bancário (CSV ou Excel)'` e `'Lançamentos internos (CSV ou Excel)'`
+  - [ ] 3 `selectbox` por arquivo para `Data`, `Descrição`, `Valor` (default auto-mapeado de S1-T02)
+  - [ ] preview 5 linhas por arquivo (`st.dataframe`)
+  - [ ] erros de S1-T04 em tabela pt-BR + botão `{component.button-primary}` `'Conciliar'`
+- [ ] T-03 Parâmetros (`{component.configurator-option-chip}` + `{component.search-input}`):
+  - [ ] `st.slider('Tolerância de dias', 0, 30, 2)` → `date_tolerance_days`
+  - [ ] `st.slider('Similaridade mínima (%)', 0, 100, 85)` + `st.toggle('Usar similaridade de descrição', True)` → `fuzzy_threshold` + `use_fuzzy`
+  - [ ] `st.number_input('Tolerância de valor (R$)', 0.00, 10.00, 0.00, step=0.01)` → `value_tolerance`
+  - [ ] textos de ajuda em `{colors.ink-muted-48}` pt-BR, ex.: `'2 dias cobre compensação D+1.'`
+- [ ] Manter estado em `st.session_state` (`statement_df`, `ledger_df`, `params`, `results`).
+
+Critério de aceite: upload → mapeamento → parâmetros → `Conciliar` em ≤ 4 cliques; labels 100% pt-BR; variáveis internas em inglês.
+
+### S3-T03 — T-04 KPIs + T-05 Resultados + T-06 Revisão (RF-017, RF-018, RF-022)
+
+Arquivo: `app.py` (etapas 4–6).
+
+- [ ] T-04 KPIs (5 `{component.store-utility-card}` sem sombra, fundo `{colors.surface-pearl}`):
+  - [ ] `'Total extrato'`, `'Total interno'`, `'% Conciliado'`, `'% Para revisão'`, `'% Pendente/Divergente'` + barra `st.progress`
+  - [ ] `'Taxa de exceção'` em destaque (= `1 - % auto`)
+- [ ] T-05 Resultados (`{component.product-tile-light}` + abas pt-BR):
+  - [ ] `st.tabs(['Conciliadas', 'Para revisão', 'Pendentes', 'Divergentes', 'Erros'])`
+  - [ ] cada aba `st.dataframe` com colunas pt-BR + filtros `st.text_input('Buscar descrição')` (`{component.search-input}` pill) + `st.slider('Valor')` + `st.date_input('Período')`
+  - [ ] RF-017: `'Extrato sem par'` e `'Interno sem par'` em tabelas separadas na aba Pendentes
+- [ ] T-06 Revisão lado a lado:
+  - [ ] `st.columns(2)`: esquerda extrato, direita interno + `day_diff`, `value_diff`, `description_score`, `rule_id` traduzidos: `'Diferença dias'`, `'Diferença valor'`, `'Score'`, `'Regra'`
+  - [ ] botões `{component.button-primary}` `'Confirmar'` e `{component.button-secondary-pill}` `'Rejeitar'` (44×44 mín)
+  - [ ] confirmar → `'conciliada_manual'` + log (`review_action` + timestamp); rejeitar → volta para pendente; reversível na sessão (RN-10)
+
+Critério de aceite: RF-017/018/022 — sem par listado dos dois lados com filtros; par sugerido mostra diffs+score+regra; confirmar/rejeitar atualiza tabelas + log.
+
+### S3-T04 — Responsivo + acessibilidade (NFR-008, NFR-010)
+
+- [ ] Breakpoints 1440/1068/833/734/640/480: ≤734px upload e KPIs empilham 1 coluna, tabelas com scroll horizontal, hero 56→28px.
+- [ ] Alvos ≥ 44×44, labels em todos os inputs, contraste `#1d1d1f` sobre `#fff`, navegação por teclado no Streamlit.
+- [ ] Teste manual: 390px (mobile) e 1440px (desktop) sem sobreposição; Lighthouse a11y sem erro crítico.
+
+Critério de aceite: fluxo completo em ≤ 7 cliques mobile e desktop; nenhum texto inglês visível; DESIGN checklist §11 passa.
+
+DoD S3: app roda `streamlit run app.py`, fluxo fim-a-fim com fixtures, visual reprova se fora dos tokens.
+
+---
+
+## S4 — Relatórios, auditoria, hardening e DoD final
+
+Objetivo: fechar o valor principal (relatório de exceções) e provar NFRs + DoD.
+
+### S4-T01 — Report: KPIs + Excel/CSV pt-BR (RF-019, RF-020, RF-022)
+
+Arquivo: `src/report.py`.
+
+- [ ] `calc_kpis(results)` retornando dict inglês (`total_statement`, `total_ledger`, `pct_auto`, `pct_review`, `pct_pending`, `pct_divergent`, `exception_rate`) exibido em pt-BR.
+- [ ] `build_conciliation_workbook(results, params)` gerando `relatorio_conciliacao.xlsx` com abas pt-BR: `Resumo` (KPIs + snapshot params + `APP_VERSION`), `Conciliadas`, `Para_Revisao`, `Pendentes`, `Divergentes`, `Erros`, `Log_Regras` via `openpyxl`.
+- [ ] `build_exceptions_csv(results)` gerando `relatorio_excecoes.csv` só com não conciliados, ordenado por `Valor normalizado desc`, header pt-BR do §10.2.
+- [ ] `format_brl(value)` para exibição (`R$ 4.800,00`), mantendo `Decimal` interno.
+- [ ] Snapshot obrigatório em ambos: `date_tolerance_days`, `fuzzy_threshold`, `value_tolerance`, `APP_VERSION`.
+- [ ] Testes `tests/test_report.py`: abas existem, headers pt-BR, ordenação, snapshot presente.
+
+Critério de aceite: RF-019/020 — Excel com 7 abas + CSV só exceções, ambos com snapshot; headers 100% pt-BR.
+
+### S4-T02 — Log de regras + T-07 Exportação + T-08 Erros (RF-021 + RN-09, RN-10)
+
+Arquivos: `src/report.py` + `app.py`.
+
+- [ ] `build_rule_log(results)` com por decisão: `rule_id` (RN-01…), `match_id`, `day_diff`, `value_diff`, `description_score`, `params_snapshot`, `reason`, `error_code` quando aplicável.
+- [ ] T-07 Exportação: botões download `st.download_button('Baixar Excel', ...)` + `'Baixar CSV de exceções'` (`{component.button-pearl-capsule}` secundário) + `{component.floating-sticky-bar}` com KPIs persistentes + `{component.footer}` parchment com versão.
+- [ ] T-08 Erros: tabela pt-BR `Linha | Motivo | Como corrigir` + `{component.icon-circular}`; sem vermelho de marca (usar ink + texto).
+- [ ] RN-10: ação manual registra `review_action` + timestamp, sobrescreve auto, reversível na sessão, visível no log.
+- [ ] Teste: cada linha `auto`/`potential` tem `rule_id`; confirmação manual aparece no log.
+
+Critério de aceite: RF-021 — 100% das decisões com regra; log visível e exportável; ação manual auditada.
+
+### S4-T03 — Hardening NFRs: performance, resiliência, segurança, portabilidade
+
+- [ ] NFR-001/NFR-003: script `scripts/bench.py` gerando 5k x 5k sintéticos, assert < 30s; > 20k emitir aviso pt-BR `'Volume alto: resultado pode demorar.'`
+- [ ] NFR-002: preview 20 MB < 3s (medir com `time`).
+- [ ] NFR-004/NFR-005: provar offline (desconectar rede, rodar matching); `grep -r 'requests|http' src` vazio exceto Streamlit.
+- [ ] NFR-006: teste path traversal (`'../../etc/passwd.csv'`) rejeitado; > 20 MB rejeitado.
+- [ ] NFR-015: teste linha corrompida no meio do CSV não aborta lote.
+- [ ] NFR-016: teste idempotência (2 runs mesmos arquivos+params → DataFrames iguais).
+- [ ] NFR-011/NFR-012: matriz `matrix/` passa em Linux; documentar Windows/macOS (`pip install` + `streamlit run`).
+- [ ] NFR-008: contagem de cliques upload→relatório ≤ 7.
+
+Critério de aceite: todos os NFRs com evidência (tempo, log, teste).
+
+### S4-T04 — DoD final + README + verificação ponta a ponta
+
+- [ ] Rodar checklist `PRD.md §15` item a item:
+  - [ ] exemplos §10 reproduzem Casos A–D §9.1 com defaults
+  - [ ] valor isolado nunca auto; duplicidade bloqueia; sinal oposto nunca casa
+  - [ ] relatórios + KPIs corretos
+  - [ ] 5k x 5k < 30s; offline; `pip install` + `streamlit run` OK
+  - [ ] código inglês + aspas simples + comentários pt-BR breves + `ruff` limpo + funções ≤ ~30 linhas
+  - [ ] `pytest --cov=src` verde, motor ≥ 80%
+  - [ ] visual DESIGN.md (body 17px, `#0066cc` único, pill, sem sombra, responsivo)
+- [ ] Finalizar `README.md` pt-BR: o que é, como instalar, como usar (7 passos), formato `Data,Descrição,Valor`, parâmetros, relatórios, solução de erros comuns.
+- [ ] `git status` limpo para `data/output/` (ignorado), fixtures versionadas.
+- [ ] Registro de decisão: o que fica para pós-MVP (CNAB, 1:N por soma, login, ERP/Open Finance, PDF/OCR) — não implementar.
+
+Critério de aceite: DoD 100% marcado com evidência (logs de `pytest`, `ruff`, bench, screenshots 390px/1440px).
+
+DoD S4 (release MVP): app instalável, conciliando exemplos do PRD, com relatório de exceções exportável e log auditável.
+
+---
+
+## Rastreabilidade RF → Sprint
+
+| RF | Sprint | Task |
+|---|---|---|
+| RF-001, RF-002 | S1 | S1-T01 |
+| RF-003 | S1 | S1-T02 |
+| RF-004 | S1 | S1-T01, S1-T04 |
+| RF-005, RF-006, RF-007 | S1 | S1-T03 |
+| RF-008, RF-009, RF-010 | S2 | S2-T01, S2-T02 |
+| RF-011, RF-012, RF-013 | S2 | S2-T01 |
+| RF-014 | S2 | S2-T03 |
+| RF-015 | S2 | S2-T02 |
+| RF-016 | S2 | S2-T03 |
+| RF-017, RF-018, RF-022 | S3 | S3-T03 |
+| RF-019, RF-020 | S4 | S4-T01 |
+| RF-021 | S4 | S4-T02 |
+
+RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN em S3-T01/T04; demais NFRs em S4-T03.
+
+---
+
+## Riscos por sprint + mitigação
+
+- S1 RT-02/RT-03 (encoding, header deslocado): mitigado por `detect_encoding/delimiter` + `auto_map_columns` + remapeamento manual + matriz de fixtures.
+- S2 RT-01/RT-04 (O(n²), falso positivo): mitigado por blocking valor+sinal + janela data + `resolve_ambiguity` nunca auto + teste armadilha.
+- S3 RNisco-01 (confiança cega no auto): mitigado por separação visual auto vs revisão + taxa de exceção em destaque + `rule_id` visível.
+- S4 RNisco-02 (tolerância ampla): mitigado por defaults conservadores (2, 85, 0.00) + alerta ao ampliar + snapshot nos relatórios.
+
+---
+
+## Ordem de execução sugerida (checklist)
+
+- [ ] S0-T01 → S0-T02 → S0-T03 (gates verdes)
+- [ ] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
+- [ ] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
+- [ ] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
+- [ ] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
+
+Cada task só fecha com `pytest` da sua área verde + `ruff check` limpo + aceite da seção marcado.
