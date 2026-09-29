@@ -125,17 +125,17 @@ Objetivo: dois arquivos heterogêneos viram duas tabelas limpas `statement` x `l
 
 Arquivo: `src/loader.py`. Funções em inglês, mensagens pt-BR.
 
-- [ ] Implementar `detect_encoding(path)` tentando `'utf-8'` → `'latin1'`.
-- [ ] Implementar `detect_delimiter(path, encoding)` tentando `','` → `';'` (amostra 5 linhas).
-- [ ] Implementar `load_table(path)`:
-  - [ ] validar extensão em `SUPPORTED_EXTENSIONS`, senão erro pt-BR `'Formato não suportado. Envie CSV ou Excel.'`
-  - [ ] validar tamanho `<= MAX_FILE_SIZE_MB`, senão erro pt-BR `'Arquivo acima de 20 MB.'`
-  - [ ] CSV via `pandas.read_csv` com encoding/delimiter detectados; Excel via `pandas.read_excel(engine='openpyxl')` primeira aba
-  - [ ] retornar `DataFrame` bruto + metadados (`encoding`, `delimiter`, `sheet`)
-- [ ] Implementar `get_preview(df, n=5)` retornando 5 primeiras linhas para UI.
-- [ ] Implementar `validate_not_empty(df)` gerando erro bloqueante pt-BR `'Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor.'`
-- [ ] Sanitizar nome de arquivo contra path traversal (NFR-006).
-- [ ] Testar com `matrix/` do S0-T02 + arquivo 20 MB (preview < 3s, NFR-002).
+- [x] Implementar `detect_encoding(path)` tentando `'utf-8'` → `'latin1'`.
+- [x] Implementar `detect_delimiter(path, encoding)` tentando `','` → `';'` (amostra 5 linhas).
+- [x] Implementar `load_table(path)`:
+  - [x] validar extensão em `SUPPORTED_EXTENSIONS`, senão erro pt-BR `'Formato não suportado. Envie CSV ou Excel.'`
+  - [x] validar tamanho `<= MAX_FILE_SIZE_MB`, senão erro pt-BR `'Arquivo acima de 20 MB.'`
+  - [x] CSV via `pandas.read_csv` com encoding/delimiter detectados; Excel via `pandas.read_excel(engine='openpyxl')` primeira aba
+  - [x] retornar `DataFrame` bruto + metadados (`encoding`, `delimiter`, `sheet`)
+- [x] Implementar `get_preview(df, n=5)` retornando 5 primeiras linhas para UI.
+- [x] Implementar `validate_not_empty(df)` gerando erro bloqueante pt-BR `'Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor.'`
+- [x] Sanitizar nome de arquivo contra path traversal (NFR-006).
+- [x] Testar com `matrix/` do S0-T02 + arquivo 20 MB (preview < 3s, NFR-002).
 
 Critério de aceite: RF-001/RF-002 — 3 formatos abrem, preview 5 linhas, `.pdf` rejeitado com mensagem pt-BR clara; arquivo vazio bloqueia.
 
@@ -143,14 +143,14 @@ Critério de aceite: RF-001/RF-002 — 3 formatos abrem, preview 5 linhas, `.pdf
 
 Arquivo: `src/loader.py` (continuação) ou `src/mapping.py`.
 
-- [ ] Implementar `normalize_header(name)` removendo acento, caixa, espaços (`'Descrição'` → `'descricao'`, `'Valor'` → `'valor'`, `'Data'` → `'data'`, `'Historico'` → `'historico'`, `'Amount'` → `'valor'`).
-- [ ] Implementar `auto_map_columns(df)` com dicionário:
-  - [ ] data: `{'data', 'date', 'dt', 'data_lancamento'}`
-  - [ ] descrição: `{'descricao', 'descrição', 'historico', 'histórico', 'description', 'memo'}`
-  - [ ] valor: `{'valor', 'value', 'amount', 'montante'}`
-- [ ] Implementar `apply_mapping(df, mapping)` retornando colunas internas `event_date`, `description`, `amount` preservando originais `Data`, `Descrição`, `Valor`.
-- [ ] Se alguma obrigatória ausente, levantar erro pt-BR `'Coluna obrigatória não encontrada: Valor. Mapeie manualmente.'` e bloquear execução.
-- [ ] Expor `get_mapping_options(df)` para os `selectbox` da UI (T-02).
+- [x] Implementar `normalize_header(name)` removendo acento, caixa, espaços (`'Descrição'` → `'descricao'`, `'Valor'` → `'valor'`, `'Data'` → `'data'`, `'Historico'` → `'historico'`, `'Amount'` → `'valor'`).
+- [x] Implementar `auto_map_columns(df)` com dicionário:
+  - [x] data: `{'data', 'date', 'dt', 'data_lancamento'}`
+  - [x] descrição: `{'descricao', 'descrição', 'historico', 'histórico', 'description', 'memo'}`
+  - [x] valor: `{'valor', 'value', 'amount', 'montante'}`
+- [x] Implementar `apply_mapping(df, mapping)` retornando colunas internas `event_date`, `description`, `amount` preservando originais `Data`, `Descrição`, `Valor`.
+- [x] Se alguma obrigatória ausente, levantar erro pt-BR `'Coluna obrigatória não encontrada: Valor. Mapeie manualmente.'` e bloquear execução.
+- [x] Expor `get_mapping_options(df)` para os `selectbox` da UI (T-02).
 
 Critério de aceite: RF-003 — auto-detecção acerta `data/descricao/valor` e minúsculas; correção manual possível; sem mapeamento completo não executa matching.
 
@@ -158,20 +158,20 @@ Critério de aceite: RF-003 — auto-detecção acerta `data/descricao/valor` e 
 
 Arquivo: `src/normalize.py`.
 
-- [ ] `normalize_date(raw)`:
-  - [ ] aceita `DD/MM/YYYY`, `YYYY-MM-DD`, `DD-MM-YYYY`, `datetime` Excel → `date` ISO `YYYY-MM-DD`
-  - [ ] inválida → `None` + código `'DATA_INVALIDA'`
-- [ ] `normalize_amount(raw)`:
-  - [ ] trata `'R$ 2.500,00'`, `'2500.00'`, `'(2500)'` → negativo, `'-2500'`, `'2.500 D'` → negativo, `'2.500 C'` → positivo
-  - [ ] retorna `Decimal` + preserva `raw`; inválido → `None` + `'VALOR_INVALIDO'`
-- [ ] `detect_sign(normalized_value, raw_text)`:
-  - [ ] débito: `'-'`, `'D'`, `'DEB'`, `'SAIDA'`, `'(...)'` → `-1`; crédito: `'+'`, `'C'`, `'CRED'`, `'ENTRADA'` → `+1`
-  - [ ] documentar precedência: sinal explícito vence; parênteses sempre débito
-- [ ] `normalize_description(raw)`:
-  - [ ] lower, remove acento, pontuação, espaços duplos → forma canônica; preserva original para exibição
-  - [ ] ex.: `'Pagamento Fornecedor X'` e `'fornecedor x nf 1254'` viram formas comparáveis sem perder original
-- [ ] `normalize_table(df_mapped)` aplicando as 3 + `sign`, gerando `normalized_date`, `normalized_amount`, `normalized_description`, `sign`, `row_hash`, `source` (`'statement'` | `'ledger'`).
-- [ ] Linhas com `None` vão para tabela de erros com `error_code` (`'DATA_INVALIDA'`, `'VALOR_INVALIDO'`, `'COLUNA_AUSENTE'`), não participam do matching.
+- [x] `normalize_date(raw)`:
+  - [x] aceita `DD/MM/YYYY`, `YYYY-MM-DD`, `DD-MM-YYYY`, `datetime` Excel → `date` ISO `YYYY-MM-DD`
+  - [x] inválida → `None` + código `'DATA_INVALIDA'`
+- [x] `normalize_amount(raw)`:
+  - [x] trata `'R$ 2.500,00'`, `'2500.00'`, `'(2500)'` → negativo, `'-2500'`, `'2.500 D'` → negativo, `'2.500 C'` → positivo
+  - [x] retorna `Decimal` + preserva `raw`; inválido → `None` + `'VALOR_INVALIDO'`
+- [x] `detect_sign(normalized_value, raw_text)`:
+  - [x] débito: `'-'`, `'D'`, `'DEB'`, `'SAIDA'`, `'(...)'` → `-1`; crédito: `'+'`, `'C'`, `'CRED'`, `'ENTRADA'` → `+1`
+  - [x] documentar precedência: sinal explícito vence; parênteses sempre débito
+- [x] `normalize_description(raw)`:
+  - [x] lower, remove acento, pontuação, espaços duplos → forma canônica; preserva original para exibição
+  - [x] ex.: `'Pagamento Fornecedor X'` e `'fornecedor x nf 1254'` viram formas comparáveis sem perder original
+- [x] `normalize_table(df_mapped)` aplicando as 3 + `sign`, gerando `normalized_date`, `normalized_amount`, `normalized_description`, `sign`, `row_hash`, `source` (`'statement'` | `'ledger'`).
+- [x] Linhas com `None` vão para tabela de erros com `error_code` (`'DATA_INVALIDA'`, `'VALOR_INVALIDO'`, `'COLUNA_AUSENTE'`), não participam do matching.
 
 Critério de aceite: RF-005/006/007 — matriz de formatos do S0 passa; `10/09/2026` vira `2026-09-10`; `-R$ 2.500,00` vira `Decimal('-2500')` + `sign=-1`; descrições preservam original.
 
@@ -179,16 +179,16 @@ Critério de aceite: RF-005/006/007 — matriz de formatos do S0 passa; `10/09/2
 
 Arquivos: `src/validate.py` (ou dentro de `normalize.py`) + `tests/test_loader.py` + `tests/test_normalize.py`.
 
-- [ ] `collect_errors(df_normalized)` separando `valid_df` x `error_df` com colunas pt-BR `Linha`, `Motivo`, `Orientação`.
-- [ ] Mensagens pt-BR acionáveis: `'Data inválida na linha 7. Use DD/MM/AAAA.'`, `'Valor inválido na linha 9. Ex.: -R$ 2.500,00.'`
-- [ ] Garantir 1 linha corrompida não aborta lote (NFR-015).
-- [ ] Testes `test_loader.py`: 3 formatos, `;`+latin1, rejeição pdf, vazio bloqueante, limite 20 MB.
-- [ ] Testes `test_normalize.py`: datas (4 formatos + inválida), valores (6 formatos + inválido), sinais D/C/parênteses, descrição canônica.
-- [ ] Cobertura `normalize` + `loader` ≥ 80%.
+- [x] `collect_errors(df_normalized)` separando `valid_df` x `error_df` com colunas pt-BR `Linha`, `Motivo`, `Orientação`.
+- [x] Mensagens pt-BR acionáveis: `'Data inválida na linha 7. Use DD/MM/AAAA.'`, `'Valor inválido na linha 9. Ex.: -R$ 2.500,00.'`
+- [x] Garantir 1 linha corrompida não aborta lote (NFR-015).
+- [x] Testes `test_loader.py`: 3 formatos, `;`+latin1, rejeição pdf, vazio bloqueante, limite 20 MB.
+- [x] Testes `test_normalize.py`: datas (4 formatos + inválida), valores (6 formatos + inválido), sinais D/C/parênteses, descrição canônica.
+- [x] Cobertura `normalize` + `loader` ≥ 80%.
 
 Critério de aceite: RF-004 — erros listados por linha com motivo; linhas com erro fora do matching; 1 linha ruim não quebra lote.
 
-DoD S1: fixtures do PRD normalizam sem erro; `pytest tests/test_loader.py tests/test_normalize.py` verdes; `ruff` limpo; nenhum label inglês vaza para erro.
+DoD S1: fixtures do PRD normalizam sem erro; `pytest tests/test_loader.py tests/test_normalize.py` verdes; `ruff` limpo; nenhum label inglês vaza para erro. ✅ Concluída.
 
 ---
 
@@ -426,7 +426,7 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 ## Ordem de execução sugerida (checklist)
 
 - [x] S0-T01 → S0-T02 → S0-T03 (gates verdes)
-- [ ] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
+- [x] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
 - [ ] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
 - [ ] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
 - [ ] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
