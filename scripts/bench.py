@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.classifier import build_result_tables
 from src.config import MAX_ROWS_WARNING
+from src.guards import warn_volume as _shared_warn_volume
 from src.logger import get_logger
 from src.mapping import apply_mapping, auto_map_columns
 from src.matcher import build_params
@@ -41,15 +42,7 @@ def run_bench(count: int = 5000) -> float:
 
 def _warn_volume(statement_count: int, ledger_count: int) -> None:
     '''Warn pt-BR when synthetic volume may degrade.'''
-    total = int(statement_count) + int(ledger_count)
-    if total > MAX_ROWS_WARNING:
-        logger.warning('Volume alto: resultado pode demorar.')
-        return
-    if int(statement_count) > MAX_ROWS_WARNING:
-        logger.warning('Volume alto: resultado pode demorar.')
-        return
-    if int(ledger_count) > MAX_ROWS_WARNING:
-        logger.warning('Volume alto: resultado pode demorar.')
+    _shared_warn_volume(statement_count, ledger_count, MAX_ROWS_WARNING)
 
 
 def main() -> None:

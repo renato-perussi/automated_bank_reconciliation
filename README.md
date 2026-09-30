@@ -137,12 +137,20 @@ Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 ## Pastas do projeto
 
-- `src/`: código principal (configurações, leitura, comparação, classificação e relatórios).
+- `app.py`: tela fina (190 linhas) que só monta os painéis e chama as seções.
+- `src/`: motor e serviços (leitura, normalização, comparação, classificação e relatórios). Fachadas finas com a lógica em pacotes:
+  - `src/reporting/`: relatórios (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`).
+  - `src/classification/`: classificação (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`).
+  - `src/filters.py`, `src/review_state.py`, `src/export_service.py`: filtros de tela, estado da revisão manual e bytes de exportação.
+  - `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py`: bases compartilhadas sem duplicação.
 - `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas).
+- `ui/sections/`: seções da tela (`upload`, `params_section`, `results`, `review`, `history`, `export_section`).
 - `scripts/`: apoio como `bench.py` para medir 5000 x 5000 em menos de 30 segundos.
+- `tests/`: 201 testes verdes, cobertura 93% (`test_filters.py`, `test_review_state.py`, `test_export_service.py`, `test_reporting_split.py`, `test_classification_split.py` além dos testes S0–S4).
 - `tests/fixtures/`: arquivos pequenos de exemplo para testes, incluindo a pasta `matrix/` com variações.
 - `data/examples/`: cópia dos exemplos para você testar à mão.
 - `data/output/`: onde saem os relatórios se você salvar à mão (esta pasta é ignorada no git).
+- `docs/superpowers/plans/`: planos de refatoração pós-S4 (sem mudança de regra de negócio).
 
 ## Depois do MVP (não fazer agora)
 

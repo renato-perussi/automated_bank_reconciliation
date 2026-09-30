@@ -13,10 +13,10 @@
 - `src/loader.py`: encoding `utf-8→latin1`, delimiter `,→;`, first Excel sheet via openpyxl, 20 MB reject, `validate_not_empty`. Server limit mirrors it (`.streamlit/config.toml` `maxUploadSize = 20`).
 - `src/mapping.py`: `normalize_header` strips accent/case; internals `event_date/description/amount`, display stays `Data/Descrição/Valor`.
 - `src/normalize.py` + `src/validate.py:collect_errors`: valid vs `Linha/Motivo/Orientação` split; one bad row never aborts batch.
-- `src/matcher.py:find_candidates`: block by `amount ± tolerance + sign`, then date window; `token_set_ratio` fuzzy.
-- `src/classifier.py:build_result_tables`: 5 tables `auto/potential/pending/divergent/duplicate`.
-- `src/report.py`: xlsx + exceptions csv, both embed params snapshot + `APP_VERSION`. Returns bytes, never writes files.
-- `ui/components.py`: display only, no engine logic.
+- `src/matcher.py:find_candidates`: block by `amount ± tolerance + sign`, then date window; `token_set_ratio` fuzzy. Shared bits live in `src/entries.py` (`collect_entries`, ledger/amount index, `is_signal_blocked`), `src/guards.py`, `src/money.py` (`Decimal` only), `src/params.py` (`build_params`, snapshot), `src/labels.py` (pt-BR labels).
+- `src/classifier.py` and `src/report.py` are thin facades (93 / 111 lines) — real logic is in `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`: 5 tables `auto/potential/pending/divergent/duplicate`) and `src/reporting/` (`details`, `errors`, `rule_log`, `workbook`, `exceptions`, `kpis`, `formatting`, `lookups`, `headers`, `snapshots`). Edit the subpackage, keep the facade re-exporting.
+- Reports (via `src/reporting/`): xlsx + exceptions csv, both embed params snapshot + `APP_VERSION`. Returns bytes, never writes files.
+- `app.py:main` (190 lines) only assembles panels; sections live in `ui/sections/` (`upload`, `params_section`, `results`, `review`, `history`, `export_section`). Pure UI filters in `src/filters.py`, review state in `src/review_state.py`, export bytes in `src/export_service.py`. `ui/components.py`: display only, no engine logic.
 
 ## Engine invariants (do not break)
 - Value alone never yields `auto`; sign mismatch blocks even if value+date match (`RN-03` → `pending/sinal_bloqueado`).
@@ -37,4 +37,4 @@
 - Manual: `data/examples/extrato.csv`, `data/examples/interno.xlsx`. Edge cases `tests/fixtures/matrix/` (`;`+latin1, lowercase header, `(2500)` parens-negative, ISO date, empty, `invalido.pdf` reject).
 - `data/output/` is gitignored — never write reports there in tests; build bytes in memory.
 - Deps pinned (`requirements.txt` is source of truth, do not change versions); `src/` is offline (no `requests`/`http` outside Streamlit).
-- Specs: `PRD.md` (requirements), `SPRINT.md` (S0–S4 all done — consult before changing engine rules), `DESIGN.md` (token reference).
+- Specs: `PRD.md` (requirements), `SPRINT.md` (S0–S5 all done, S5 = post-S4 refactor with no rule changes — consult before changing engine rules), `DESIGN.md` (token reference).

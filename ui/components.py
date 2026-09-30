@@ -1,13 +1,14 @@
 '''Interface helpers following Apple minimal tokens.'''
 
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 from src.logger import get_logger
+from src.money import format_brl as _shared_brl
+from src.report import calc_kpis as _shared_kpis
 
 logger = get_logger(__name__)
 
@@ -88,52 +89,12 @@ def format_pct(raw_value: object) -> str:
 
 def format_brl(raw_value: object) -> str:
     '''Format numeric input as pt-BR currency text.'''
-    if raw_value is None:
-        return '—'
-    try:
-        if pd.isna(raw_value):
-            return '—'
-    except (ValueError, TypeError):
-        pass
-    try:
-        amount = Decimal(str(raw_value))
-    except (InvalidOperation, ValueError, TypeError):
-        return str(raw_value)
-    quantized = amount.quantize(Decimal('0.00'))
-    text = f'{quantized:,.2f}'
-    text = text.replace(',', 'X').replace('.', ',').replace('X', '.')
-    return f'R$ {text}'
+    return _shared_brl(raw_value)
 
 
 def calc_kpis(results: dict, statement_count: int, ledger_count: int) -> dict:
     '''Calculate totals and percentages from result tables.'''
-    auto_count = len(results.get('auto'))
-    potential_count = len(results.get('potential'))
-    pending_count = len(results.get('pending'))
-    divergent_count = len(results.get('divergent'))
-    duplicate_count = len(results.get('duplicate'))
-    unified = auto_count + potential_count + pending_count + divergent_count
-    unified = unified + duplicate_count
-    if unified == 0:
-        pct_auto = 0.0
-        pct_review = 0.0
-        pct_pending = 0.0
-        pct_divergent = 0.0
-    else:
-        pct_auto = round(auto_count / unified * 100, 1)
-        pct_review = round(potential_count / unified * 100, 1)
-        pct_pending = round(pending_count / unified * 100, 1)
-        pct_divergent = round((divergent_count + duplicate_count) / unified * 100, 1)
-    exception_rate = round(100.0 - pct_auto, 1)
-    return {
-        'total_statement': int(statement_count),
-        'total_ledger': int(ledger_count),
-        'pct_auto': float(pct_auto),
-        'pct_review': float(pct_review),
-        'pct_pending': float(pct_pending),
-        'pct_divergent': float(pct_divergent),
-        'exception_rate': float(exception_rate),
-    }
+    return _shared_kpis(results, statement_count, ledger_count)
 
 
 def _lookup_field(source: pd.DataFrame, idx: object, fields: list) -> object:

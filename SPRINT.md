@@ -434,3 +434,16 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 - [x] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
 
 Cada task só fecha com `pytest` da sua área verde + `ruff check` limpo + aceite da seção marcado.
+
+---
+
+## S5 — Refatoração pós-S4 (sem mudança de regra)
+
+Objetivo: reduzir arquivos grandes a fachadas finas com pacotes testáveis, sem alterar RF-001–RF-022, RN-01–RN-10, NFRs nem Casos A–D. S0–S4 seguem congeladas acima.
+
+- [x] S5-T01 — Bases compartilhadas: `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py` eliminando duplicação de `matcher`/`classifier`/`report`.
+- [x] S5-T02 — `app.py` 962→190 linhas: `src/filters.py`, `src/review_state.py`, `src/export_service.py` + `ui/sections/` (`upload`, `params_section`, `results`, `review`, `history`, `export_section`). Wrappers compat preservados, `main` com 7 `render_*`.
+- [x] S5-T03 — `src/report.py` 791→111 e `src/classifier.py` 553→93: `src/reporting/` (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`) + `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`). Bytes xlsx/csv e 5 tabelas idênticos.
+- [x] S5-T04 — Testes: 167→201 verdes, cobertura 93% (`test_filters`, `test_review_state`, `test_export_service`, `test_reporting_split`, `test_classification_split`). Planos em `docs/superpowers/plans/`.
+
+Critério de aceite: `ruff check src tests app.py ui scripts` limpo + `pytest -q` 201 verdes + auditoria `PASS` + invariantes (valor isolado nunca auto, sinal bloqueia RN-03, ambiguidade nunca auto RN-07, centavos nunca auto RN-08) preservadas.
