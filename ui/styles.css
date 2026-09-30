@@ -196,37 +196,6 @@ div[data-testid='stVerticalBlock']:has(
   white-space: nowrap;
 }
 
-.audit-chip {
-  background: #fafafc;
-  border: 1px solid #e0e0e0;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: none;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.audit-chip-label {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-  letter-spacing: -0.224px;
-  color: #7a7a7a;
-  white-space: nowrap;
-}
-
-.audit-chip-value {
-  font-family: 'SF Pro Display', system-ui, -apple-system, Inter, sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.224px;
-  color: #1d1d1f;
-  white-space: nowrap;
-}
-
 .label-strong {
   font-weight: 600;
 }
@@ -361,7 +330,6 @@ div.stButton > button:focus {
 }
 
 div.stTextInput > div > div > input {
-  border-radius: 9999px;
   height: 44px;
   min-height: 44px;
   font-size: 17px;
@@ -522,7 +490,18 @@ div.stButton > button[kind='secondary']:focus {
   outline-offset: 2px;
 }
 
-div[data-testid='stTextInput'] input:focus,
+div[data-testid='stTextInput'] > div > div:focus-within {
+  border: 1px solid #0071e3 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+div[data-testid='stTextInput'] input:focus {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 div[data-testid='stNumberInput'] input:focus,
 div[data-testid='stDateInput'] input:focus,
 div[data-testid='stSelectbox'] div[data-baseweb='select']:focus-within {

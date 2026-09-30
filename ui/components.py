@@ -48,6 +48,25 @@ def render_kpi_card(label: str, value: str) -> None:
     )
 
 
+def build_column_config(frame: pd.DataFrame) -> dict:
+    '''Build typed config with BRL dates and pinned id.'''
+    config: dict = {}
+    if frame is None or len(frame) == 0:
+        return config
+    for field in ['Valor', 'Valor extrato', 'Valor interno', 'Diferença valor']:
+        if field in list(frame.columns):
+            config[field] = st.column_config.NumberColumn(format='R$ %.2f')
+    for field in ['Data', 'Data extrato', 'Data interno']:
+        if field in list(frame.columns):
+            config[field] = st.column_config.DateColumn(format='DD/MM/YYYY')
+    if 'Data/Hora' in list(frame.columns):
+        fmt = 'DD/MM/YYYY HH:mm:ss'
+        config['Data/Hora'] = st.column_config.DatetimeColumn(format=fmt)
+    if 'Par ID' in list(frame.columns):
+        config['Par ID'] = st.column_config.TextColumn(pinned=True)
+    return config
+
+
 def render_status_table(frame: pd.DataFrame) -> None:
     '''Render result table with empty pt-BR fallback.'''
     if frame is None or len(frame) == 0:
@@ -55,7 +74,7 @@ def render_status_table(frame: pd.DataFrame) -> None:
             '<p class="body-text">Nenhum registro encontrado.</p>', unsafe_allow_html=True
         )
         return
-    st.dataframe(frame, use_container_width=True)
+    st.dataframe(frame, hide_index=True, column_config=build_column_config(frame))
 
 
 def format_pct(raw_value: object) -> str:
@@ -273,6 +292,18 @@ def build_comparison_frame(detail: pd.Series) -> pd.DataFrame:
         'Interno': _display_text(detail.get('Valor interno')),
     }
     return pd.DataFrame([date_row, desc_row, amount_row], columns=columns)
+
+
+def build_audit_frame(detail: pd.Series) -> pd.DataFrame:
+    '''Build static audit metric table for review.'''
+    columns = ['Métrica', 'Valor']
+    rows = [
+        {'Métrica': 'Diferença dias', 'Valor': _display_text(detail.get('Diferença dias'))},
+        {'Métrica': 'Diferença valor', 'Valor': format_brl(detail.get('Diferença valor'))},
+        {'Métrica': 'Score', 'Valor': _display_text(detail.get('Score'))},
+        {'Métrica': 'Regra', 'Valor': _display_text(detail.get('Regra'))},
+    ]
+    return pd.DataFrame(rows, columns=columns)
 
 
 def build_pending_side(

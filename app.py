@@ -18,11 +18,12 @@ from src.normalize import normalize_table
 from src.report import build_conciliation_workbook, build_exceptions_csv
 from src.validate import collect_errors
 from ui.components import (
+    build_audit_frame,
+    build_column_config,
     build_comparison_frame,
     build_match_display,
     build_pending_side,
     calc_kpis,
-    format_brl,
     format_pct,
     load_styles,
     render_header,
@@ -151,14 +152,21 @@ def format_error_display(frame: pd.DataFrame) -> pd.DataFrame:
     return work[columns]
 
 
-def show_preview_errors(raw_frame: pd.DataFrame, error_frame: pd.DataFrame) -> None:
+def show_preview_errors(raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str) -> None:
     '''Show five row preview plus pt-BR error table.'''
-    with st.expander('Prévia e erros', expanded=False):
+    box = st.expander(
+        'Prévia e erros', expanded=False, icon=':material/preview:', on_change='rerun',
+        key=f'{prefix}_preview',
+    )
+    if box.open is False:
+        return
+    with box:
         st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
-        st.dataframe(get_preview(raw_frame, 5), use_container_width=True)
+        st.dataframe(get_preview(raw_frame, 5), hide_index=True)
         if error_frame is not None and len(error_frame) > 0:
             st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
-            st.dataframe(format_error_display(error_frame), use_container_width=True)
+            display = format_error_display(error_frame)
+            st.dataframe(display, hide_index=True, column_config=build_column_config(display))
 
 
 def render_single_upload(
@@ -179,7 +187,7 @@ def render_single_upload(
     valid, errors = finalize_source(raw_frame, mapping, source)
     st.session_state[frame_key] = valid
     st.session_state[error_key] = errors
-    show_preview_errors(raw_frame, errors)
+    show_preview_errors(raw_frame, errors, prefix)
 
 
 def render_upload_section() -> None:
@@ -214,21 +222,14 @@ def render_params_section() -> None:
     '''Render tolerance controls storing engine params.'''
     st.markdown('<h2 class="display-md">Parâmetros</h2>', unsafe_allow_html=True)
     date_tolerance_days = st.slider('Tolerância de dias', 0, 30, DATE_TOLERANCE_DAYS)
-    st.markdown(
-        '<p class="help-muted">2 dias cobre compensação D+1.</p>', unsafe_allow_html=True
-    )
+    st.caption('2 dias cobre compensação D+1.')
     fuzzy_threshold = st.slider('Similaridade mínima (%)', 0, 100, FUZZY_THRESHOLD)
     use_fuzzy = st.toggle('Usar similaridade de descrição', True)
-    st.markdown(
-        '<p class="help-muted">85 equilibra precisão e revisão manual.</p>', unsafe_allow_html=True
-    )
+    st.caption('85 equilibra precisão e revisão manual.')
     raw_tolerance = st.number_input(
         'Tolerância de valor (R$)', 0.00, 10.00, float(VALUE_TOLERANCE), step=0.01
     )
-    st.markdown(
-        '<p class="help-muted">0,00 exige valor exato. Ex.: 0,05 permite centavos.</p>',
-        unsafe_allow_html=True,
-    )
+    st.caption('0,00 exige valor exato. Ex.: 0,05 permite centavos.')
     try:
         st.session_state['params'] = build_params(
             date_tolerance_days=date_tolerance_days,
@@ -242,9 +243,7 @@ def render_params_section() -> None:
 
 def render_concile_button() -> None:
     '''Execute matching storing five result tables.'''
-    pressed = st.button(
-        'Conciliar', key='concile_action', type='primary', use_container_width=True
-    )
+    pressed = st.button('Conciliar', key='concile_action', type='primary', width='stretch')
     if not pressed:
         return
     statement_frame = st.session_state.get('statement_df')
@@ -293,10 +292,7 @@ def render_empty_results() -> None:
             '<p class="body-text">Nenhum resultado ainda.</p>',
             unsafe_allow_html=True,
         )
-        st.markdown(
-            '<p class="help-muted">Envie os dois arquivos e clique em Conciliar.</p>',
-            unsafe_allow_html=True,
-        )
+        st.caption('Envie os dois arquivos e clique em Conciliar.')
 
 
 def render_kpi_section() -> None:
@@ -312,17 +308,12 @@ def render_kpi_section() -> None:
     kpis = calc_kpis(results, statement_count, ledger_count)
     kpis = _apply_manual_kpis(kpis)
     st.markdown('<h2 class="display-md">Resultados</h2>', unsafe_allow_html=True)
-    cols = st.columns(5)
-    with cols[0]:
+    with st.container(horizontal=True):
         render_kpi_card('Total extrato', str(kpis['total_statement']))
-    with cols[1]:
         render_kpi_card('Total interno', str(kpis['total_ledger']))
-    with cols[2]:
         render_kpi_card('% Conciliado', format_pct(kpis['pct_auto']))
-    with cols[3]:
         render_kpi_card('% Para revisão', format_pct(kpis['pct_review']))
-    with cols[4]:
-        render_kpi_card('% Pendente/Divergente', format_pct(kpis['pct_pending']))
+        render_kpi_card('% Pendente', format_pct(kpis['pct_pending']))
     st.progress(_safe_ratio(kpis['pct_auto']))
     st.markdown(
         f'<p class="body-text">Taxa de exceção: {format_pct(kpis["exception_rate"])}</p>',
@@ -396,7 +387,11 @@ def filter_by_value(frame: pd.DataFrame, low: float, high: float) -> pd.DataFram
 
 def _filter_match_display(display: pd.DataFrame, prefix: str) -> pd.DataFrame:
     '''Apply search value period filters inside expander.'''
-    with st.expander('Filtros', expanded=False):
+    box = st.expander(
+        'Filtros', expanded=False, icon=':material/filter_list:', on_change='rerun',
+        key=f'{prefix}_filters',
+    )
+    with box:
         query = st.text_input('Buscar descrição', key=f'{prefix}_search')
         filtered = filter_by_text(display, query)
         low, high = _value_bounds(filtered)
@@ -560,7 +555,11 @@ def _pending_bounds(left: pd.DataFrame, right: pd.DataFrame) -> tuple:
 
 def _filter_pending_sides(left_base: pd.DataFrame, right_base: pd.DataFrame) -> tuple:
     '''Apply pending search value period inside expander.'''
-    with st.expander('Filtros', expanded=False):
+    box = st.expander(
+        'Filtros', expanded=False, icon=':material/filter_list:', on_change='rerun',
+        key='pending_filters',
+    )
+    with box:
         query = st.text_input('Buscar descrição', key='pending_search')
         left_filtered = filter_by_text(left_base, query)
         right_filtered = filter_by_text(right_base, query)
@@ -600,27 +599,56 @@ def render_error_tab() -> None:
     render_status_table(format_error_display(ledger_errors))
 
 
+def _result_tab_labels() -> list:
+    '''Return six pt-BR tab labels with icons.'''
+    return [
+        ':material/check_circle: Conciliadas',
+        ':material/rate_review: Para revisão',
+        ':material/pending: Pendentes',
+        ':material/warning: Divergentes',
+        ':material/content_copy: Duplicadas',
+        ':material/error: Erros',
+    ]
+
+
+def _show_auto_tab(tab: object, results: dict) -> None:
+    '''Render conciliadas content when tab open.'''
+    with tab:
+        if tab.open is not False:
+            render_match_tab(results.get('auto'), 'auto', 'Nenhuma conciliada ainda.')
+
+
+def _show_potential_tab(tab: object, results: dict) -> None:
+    '''Render revision content with review panel.'''
+    with tab:
+        if tab.open is not False:
+            render_match_tab(results.get('potential'), 'potential', 'Nenhum par para revisão.')
+            render_review_section()
+
+
+def _show_simple_tab(tab: object, results: dict, frame_key: str, prefix: str, empty: str) -> None:
+    '''Render single match tab when open.'''
+    with tab:
+        if tab.open is not False:
+            render_match_tab(results.get(frame_key), prefix, empty)
+
+
 def render_results_section() -> None:
     '''Render six tabs with pt-BR tables.'''
     results = st.session_state.get('results')
     if results is None:
         return
-    tabs = st.tabs(
-        ['Conciliadas', 'Para revisão', 'Pendentes', 'Divergentes', 'Duplicadas', 'Erros']
-    )
-    with tabs[0]:
-        render_match_tab(results.get('auto'), 'auto', 'Nenhuma conciliada ainda.')
-    with tabs[1]:
-        render_match_tab(results.get('potential'), 'potential', 'Nenhum par para revisão.')
-        render_review_section()
+    tabs = st.tabs(_result_tab_labels(), key='results_tabs', on_change='rerun')
+    _show_auto_tab(tabs[0], results)
+    _show_potential_tab(tabs[1], results)
     with tabs[2]:
-        render_pending_tab()
-    with tabs[3]:
-        render_match_tab(results.get('divergent'), 'divergent', 'Nenhuma divergência.')
-    with tabs[4]:
-        render_match_tab(results.get('duplicate'), 'duplicate', 'Nenhuma duplicada.')
+        if tabs[2].open is not False:
+            render_pending_tab()
+    _show_simple_tab(tabs[3], results, 'divergent', 'divergent', 'Nenhuma divergência.')
+    _show_simple_tab(tabs[4], results, 'duplicate', 'duplicate', 'Nenhuma duplicada.')
     with tabs[5]:
-        render_error_tab()
+        if tabs[5].open is not False:
+            render_error_tab()
 
 
 def _filtered_review_rows(potential: object) -> object:
@@ -643,12 +671,19 @@ def _pick_review_row(available: object) -> tuple:
 
 def _render_review_actions(chosen: str) -> None:
     '''Render confirm reject buttons plus feedback history.'''
-    confirm_col, reject_col, _ = st.columns([1, 1, 3])
+    confirm_col, reject_col, _ = st.columns([1, 1, 2])
     with confirm_col:
-        if st.button('Confirmar', key='confirm_pair', type='primary', use_container_width=True):
+        confirm = st.button(
+            'Confirmar', key='confirm_pair', type='primary', width='stretch',
+            icon=':material/check:',
+        )
+        if confirm:
             confirm_pair(str(chosen))
     with reject_col:
-        if st.button('Rejeitar', key='reject_pair', use_container_width=True):
+        reject = st.button(
+            'Rejeitar', key='reject_pair', width='stretch', icon=':material/close:'
+        )
+        if reject:
             reject_pair(str(chosen))
     _render_feedback()
     render_history()
@@ -689,32 +724,16 @@ def _render_feedback() -> None:
     st.session_state['feedback'] = None
 
 
-def _render_audit_chips(detail: pd.Series) -> None:
-    '''Render dias valor score regra as compact chips.'''
-    chips = st.columns(4)
-    entries = [
-        ('Diferença dias', detail.get('Diferença dias')),
-        ('Diferença valor', format_brl(detail.get('Diferença valor'))),
-        ('Score', detail.get('Score')),
-        ('Regra', detail.get('Regra')),
-    ]
-    for pos, (label, value) in enumerate(entries):
-        with chips[pos]:
-            st.markdown(
-                f'<div class="audit-chip"><div class="audit-chip-label">{label}</div>'
-                f'<div class="audit-chip-value">{value}</div></div>',
-                unsafe_allow_html=True,
-            )
-
-
 def render_pair_detail(row: pd.Series) -> None:
-    '''Show comparison table chips and motive.'''
+    '''Show comparison table audit table and motive.'''
     statement_frame = st.session_state.get('statement_df')
     ledger_frame = st.session_state.get('ledger_df')
     display = build_match_display(pd.DataFrame([row]), statement_frame, ledger_frame, set())
     detail = display.iloc[0] if len(display) > 0 else None
-    st.dataframe(build_comparison_frame(detail), use_container_width=True, hide_index=True)
-    _render_audit_chips(detail)
+    frame = build_comparison_frame(detail)
+    st.table(frame, border='horizontal', width='content', hide_index=True)
+    audit = build_audit_frame(detail)
+    st.table(audit, border='horizontal', width='content', hide_index=True)
     st.markdown(
         '<p class="body-text motivo-line"><span class="label-strong">Motivo:</span> '
         f'{_reason_label(detail.get("Motivo"))}</p>',
@@ -820,7 +839,8 @@ def render_history() -> None:
     if not log_items:
         return
     st.markdown('<p class="body-text">Histórico de revisão</p>', unsafe_allow_html=True)
-    st.dataframe(_history_display(list(log_items)), use_container_width=True)
+    display = _history_display(list(log_items))
+    st.dataframe(display, hide_index=True, column_config=build_column_config(display))
     if st.button('Desfazer última ação', key='undo_review', type='primary'):
         undo_last_review()
 
@@ -843,15 +863,17 @@ def undo_last_review() -> None:
     st.rerun()
 
 
-def build_export_payloads() -> tuple:
-    '''Build excel csv bytes in memory without files.'''
-    results = st.session_state.get('results')
-    params = st.session_state.get('params', build_params())
-    statement_frame = st.session_state.get('statement_df')
-    ledger_frame = st.session_state.get('ledger_df')
-    statement_errors = st.session_state.get('statement_errors')
-    ledger_errors = st.session_state.get('ledger_errors')
-    review_log = st.session_state.get('review_log', [])
+@st.cache_data(ttl=600, max_entries=5)
+def _cached_export_payloads(
+    results: dict,
+    params: dict,
+    statement_frame: object,
+    ledger_frame: object,
+    statement_errors: object,
+    ledger_errors: object,
+    review_log: object,
+) -> tuple:
+    '''Build cached excel csv bytes from hashable inputs.'''
     errors = {'statement': statement_errors, 'ledger': ledger_errors}
     try:
         excel_bytes = build_conciliation_workbook(
@@ -870,6 +892,21 @@ def build_export_payloads() -> tuple:
     return excel_bytes, csv_bytes
 
 
+def build_export_payloads() -> tuple:
+    '''Build excel csv bytes in memory without files.'''
+    results = st.session_state.get('results')
+    params = st.session_state.get('params', build_params())
+    statement_frame = st.session_state.get('statement_df')
+    ledger_frame = st.session_state.get('ledger_df')
+    statement_errors = st.session_state.get('statement_errors')
+    ledger_errors = st.session_state.get('ledger_errors')
+    review_log = st.session_state.get('review_log', [])
+    return _cached_export_payloads(
+        results, params, statement_frame, ledger_frame, statement_errors, ledger_errors,
+        review_log,
+    )
+
+
 def render_download_buttons(excel_bytes: bytes, csv_bytes: bytes) -> None:
     '''Render two side by side download actions.'''
     left, right = st.columns(2)
@@ -880,8 +917,9 @@ def render_download_buttons(excel_bytes: bytes, csv_bytes: bytes) -> None:
             file_name='relatorio_conciliacao.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             key='download_excel',
-            use_container_width=True,
+            width='stretch',
             type='primary',
+            icon=':material/download:',
         )
     with right:
         st.download_button(
@@ -890,8 +928,9 @@ def render_download_buttons(excel_bytes: bytes, csv_bytes: bytes) -> None:
             file_name='relatorio_excecoes.csv',
             mime='text/csv',
             key='download_csv',
-            use_container_width=True,
+            width='stretch',
             type='primary',
+            icon=':material/download:',
         )
 
 
@@ -916,7 +955,9 @@ def render_export_section() -> None:
 
 def main() -> None:
     '''Run wide two column reconciliation flow.'''
-    st.set_page_config(page_title='Conciliação Bancária', layout='wide')
+    st.set_page_config(
+        page_title='Conciliação Bancária', layout='wide', page_icon=':material/account_balance:'
+    )
     init_state()
     load_styles()
     render_header()
