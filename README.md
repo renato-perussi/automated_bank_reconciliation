@@ -34,15 +34,23 @@ pip install -r requirements_dev.txt
 
 ## Como executar
 
-O aplicativo de tela ainda será criado na etapa S3. Quando estiver pronto, o comando será:
+Para abrir a tela de conciliação, rode:
 
 ```bash
 streamlit run app.py
 ```
 
-> Atenção: o arquivo `app.py` ainda não existe nesta etapa S0. Ele será criado na S3.
+Fluxo em 7 passos:
 
-Enquanto isso, você pode ver os arquivos de exemplo em `data/examples/`:
+1. Abra o endereço mostrado no terminal.
+2. Envie o extrato bancário em CSV ou Excel.
+3. Envie os lançamentos internos em CSV ou Excel.
+4. Confira as colunas Data, Descrição e Valor e veja a prévia de 5 linhas.
+5. Ajuste a tolerância de dias, a similaridade mínima e a tolerância de valor.
+6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes e Erros.
+7. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
+
+Você pode testar com os arquivos de exemplo em `data/examples/`:
 
 - `data/examples/extrato.csv`
 - `data/examples/interno.xlsx`
@@ -99,8 +107,8 @@ Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 ## Pastas do projeto
 
-- `src/`: código principal (configurações e, em breve, leitura e comparação).
-- `ui/`: peças visuais da tela (será usado na S3).
+- `src/`: código principal (configurações, leitura, comparação e classificação).
+- `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas da S3).
 - `tests/fixtures/`: arquivos pequenos de exemplo para testes, incluindo a pasta `matrix/` com variações.
 - `data/examples/`: cópia dos exemplos para você testar à mão.
 - `data/output/`: onde saem os relatórios (esta pasta é ignorada no git).

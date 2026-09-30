@@ -270,15 +270,15 @@ Objetivo: fluxo em ≤ 7 cliques, todo em pt-BR, todo dentro dos tokens Apple.
 
 Arquivos: `ui/styles.css`, `ui/components.py`.
 
-- [ ] Criar `ui/styles.css` com variáveis:
-  - [ ] `--primary: #0066cc` (`{colors.primary}`), `--primary-focus: #0071e3`, `--canvas: #ffffff`, `--parchment: #f5f5f7`, `--ink: #1d1d1f`
-  - [ ] fonte `SF Pro Display, SF Pro Text, system-ui, -apple-system, Inter, sans-serif`; body 17px/1.47, `-0.374px` em display
-  - [ ] `.btn-primary { background: var(--primary); border-radius: 9999px; padding: 11px 22px; }` + `:active { transform: scale(0.95); }` + `:focus { outline: 2px solid var(--primary-focus); }`
-  - [ ] `.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 18px; padding: 24px; }` sem `box-shadow`
-  - [ ] `.nav-global { background: #000; height: 44px; }`, `.nav-sub { background: rgba(245,245,247,0.8); backdrop-filter: saturate(180%) blur(20px); height: 52px; }`
-  - [ ] `.search { border-radius: 9999px; height: 44px; }`, `.footer { background: #f5f5f7; }`
-- [ ] Criar helpers em `ui/components.py`: `render_header()`, `render_kpi_card(label, value)`, `render_status_table(df)`, todos com aspas simples e sem comentários.
-- [ ] Checklist proibições: sem segunda cor, sem gradiente, sem `font-weight: 500`, sem sombra em card/botão, tiles sem radius.
+- [x] Criar `ui/styles.css` com variáveis:
+  - [x] `--primary: #0066cc` (`{colors.primary}`), `--primary-focus: #0071e3`, `--canvas: #ffffff`, `--parchment: #f5f5f7`, `--ink: #1d1d1f`
+  - [x] fonte `SF Pro Display, SF Pro Text, system-ui, -apple-system, Inter, sans-serif`; body 17px/1.47, `-0.374px` em display
+  - [x] `.btn-primary { background: var(--primary); border-radius: 9999px; padding: 11px 22px; }` + `:active { transform: scale(0.95); }` + `:focus { outline: 2px solid var(--primary-focus); }`
+  - [x] `.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 18px; padding: 24px; }` sem `box-shadow`
+  - [x] `.nav-global { background: #000; height: 44px; }`, `.nav-sub { background: rgba(245,245,247,0.8); backdrop-filter: saturate(180%) blur(20px); height: 52px; }`
+  - [x] `.search { border-radius: 9999px; height: 44px; }`, `.footer { background: #f5f5f7; }`
+- [x] Criar helpers em `ui/components.py`: `render_header()`, `render_kpi_card(label, value)`, `render_status_table(df)`, todos com aspas simples e sem comentários.
+- [x] Checklist proibições: sem segunda cor, sem gradiente, sem `font-weight: 500`, sem sombra em card/botão, tiles sem radius.
 
 Critério de aceite: `styles.css` usa só tokens; botão primário pill azul 11×22px; cards brancos hairline sem sombra; body 17px.
 
@@ -286,18 +286,18 @@ Critério de aceite: `styles.css` usa só tokens; botão primário pill azul 11�
 
 Arquivo: `app.py` (etapas 1–3).
 
-- [ ] T-01 Header: `{component.global-nav}` 44px preta + `{component.sub-nav-frosted}` com steps pt-BR `'1 Upload → 2 Parâmetros → 3 Resultados'`; título `'Conciliação Bancária'` em `{typography.display-lg}`.
-- [ ] T-02 Upload (`{component.store-utility-card}`):
-  - [ ] dois `st.file_uploader` lado a lado: `'Extrato bancário (CSV ou Excel)'` e `'Lançamentos internos (CSV ou Excel)'`
-  - [ ] 3 `selectbox` por arquivo para `Data`, `Descrição`, `Valor` (default auto-mapeado de S1-T02)
-  - [ ] preview 5 linhas por arquivo (`st.dataframe`)
-  - [ ] erros de S1-T04 em tabela pt-BR + botão `{component.button-primary}` `'Conciliar'`
-- [ ] T-03 Parâmetros (`{component.configurator-option-chip}` + `{component.search-input}`):
-  - [ ] `st.slider('Tolerância de dias', 0, 30, 2)` → `date_tolerance_days`
-  - [ ] `st.slider('Similaridade mínima (%)', 0, 100, 85)` + `st.toggle('Usar similaridade de descrição', True)` → `fuzzy_threshold` + `use_fuzzy`
-  - [ ] `st.number_input('Tolerância de valor (R$)', 0.00, 10.00, 0.00, step=0.01)` → `value_tolerance`
-  - [ ] textos de ajuda em `{colors.ink-muted-48}` pt-BR, ex.: `'2 dias cobre compensação D+1.'`
-- [ ] Manter estado em `st.session_state` (`statement_df`, `ledger_df`, `params`, `results`).
+- [x] T-01 Header: `{component.global-nav}` 44px preta + `{component.sub-nav-frosted}` com steps pt-BR `'1 Upload → 2 Parâmetros → 3 Resultados'`; título `'Conciliação Bancária'` em `{typography.display-lg}`.
+- [x] T-02 Upload (`{component.store-utility-card}`):
+  - [x] dois `st.file_uploader` lado a lado: `'Extrato bancário (CSV ou Excel)'` e `'Lançamentos internos (CSV ou Excel)'`
+  - [x] 3 `selectbox` por arquivo para `Data`, `Descrição`, `Valor` (default auto-mapeado de S1-T02)
+  - [x] preview 5 linhas por arquivo (`st.dataframe`)
+  - [x] erros de S1-T04 em tabela pt-BR + botão `{component.button-primary}` `'Conciliar'`
+- [x] T-03 Parâmetros (`{component.configurator-option-chip}` + `{component.search-input}`):
+  - [x] `st.slider('Tolerância de dias', 0, 30, 2)` → `date_tolerance_days`
+  - [x] `st.slider('Similaridade mínima (%)', 0, 100, 85)` + `st.toggle('Usar similaridade de descrição', True)` → `fuzzy_threshold` + `use_fuzzy`
+  - [x] `st.number_input('Tolerância de valor (R$)', 0.00, 10.00, 0.00, step=0.01)` → `value_tolerance`
+  - [x] textos de ajuda em `{colors.ink-muted-48}` pt-BR, ex.: `'2 dias cobre compensação D+1.'`
+- [x] Manter estado em `st.session_state` (`statement_df`, `ledger_df`, `params`, `results`).
 
 Critério de aceite: upload → mapeamento → parâmetros → `Conciliar` em ≤ 4 cliques; labels 100% pt-BR; variáveis internas em inglês.
 
@@ -305,29 +305,31 @@ Critério de aceite: upload → mapeamento → parâmetros → `Conciliar` em �
 
 Arquivo: `app.py` (etapas 4–6).
 
-- [ ] T-04 KPIs (5 `{component.store-utility-card}` sem sombra, fundo `{colors.surface-pearl}`):
-  - [ ] `'Total extrato'`, `'Total interno'`, `'% Conciliado'`, `'% Para revisão'`, `'% Pendente/Divergente'` + barra `st.progress`
-  - [ ] `'Taxa de exceção'` em destaque (= `1 - % auto`)
-- [ ] T-05 Resultados (`{component.product-tile-light}` + abas pt-BR):
-  - [ ] `st.tabs(['Conciliadas', 'Para revisão', 'Pendentes', 'Divergentes', 'Erros'])`
-  - [ ] cada aba `st.dataframe` com colunas pt-BR + filtros `st.text_input('Buscar descrição')` (`{component.search-input}` pill) + `st.slider('Valor')` + `st.date_input('Período')`
-  - [ ] RF-017: `'Extrato sem par'` e `'Interno sem par'` em tabelas separadas na aba Pendentes
-- [ ] T-06 Revisão lado a lado:
-  - [ ] `st.columns(2)`: esquerda extrato, direita interno + `day_diff`, `value_diff`, `description_score`, `rule_id` traduzidos: `'Diferença dias'`, `'Diferença valor'`, `'Score'`, `'Regra'`
-  - [ ] botões `{component.button-primary}` `'Confirmar'` e `{component.button-secondary-pill}` `'Rejeitar'` (44×44 mín)
-  - [ ] confirmar → `'conciliada_manual'` + log (`review_action` + timestamp); rejeitar → volta para pendente; reversível na sessão (RN-10)
+- [x] T-04 KPIs (5 `{component.store-utility-card}` sem sombra, fundo `{colors.surface-pearl}`):
+  - [x] `'Total extrato'`, `'Total interno'`, `'% Conciliado'`, `'% Para revisão'`, `'% Pendente/Divergente'` + barra `st.progress`
+  - [x] `'Taxa de exceção'` em destaque (= `1 - % auto`)
+- [x] T-05 Resultados (`{component.product-tile-light}` + abas pt-BR):
+  - [x] `st.tabs(['Conciliadas', 'Para revisão', 'Pendentes', 'Divergentes', 'Erros'])`
+  - [x] cada aba `st.dataframe` com colunas pt-BR + filtros `st.text_input('Buscar descrição')` (`{component.search-input}` pill) + `st.slider('Valor')` + `st.date_input('Período')`
+  - [x] RF-017: `'Extrato sem par'` e `'Interno sem par'` em tabelas separadas na aba Pendentes
+- [x] T-06 Revisão lado a lado:
+  - [x] `st.columns(2)`: esquerda extrato, direita interno + `day_diff`, `value_diff`, `description_score`, `rule_id` traduzidos: `'Diferença dias'`, `'Diferença valor'`, `'Score'`, `'Regra'`
+  - [x] botões `{component.button-primary}` `'Confirmar'` e `{component.button-secondary-pill}` `'Rejeitar'` (44×44 mín)
+  - [x] confirmar → `'conciliada_manual'` + log (`review_action` + timestamp); rejeitar → volta para pendente; reversível na sessão (RN-10)
 
 Critério de aceite: RF-017/018/022 — sem par listado dos dois lados com filtros; par sugerido mostra diffs+score+regra; confirmar/rejeitar atualiza tabelas + log.
 
 ### S3-T04 — Responsivo + acessibilidade (NFR-008, NFR-010)
 
-- [ ] Breakpoints 1440/1068/833/734/640/480: ≤734px upload e KPIs empilham 1 coluna, tabelas com scroll horizontal, hero 56→28px.
-- [ ] Alvos ≥ 44×44, labels em todos os inputs, contraste `#1d1d1f` sobre `#fff`, navegação por teclado no Streamlit.
-- [ ] Teste manual: 390px (mobile) e 1440px (desktop) sem sobreposição; Lighthouse a11y sem erro crítico.
+- [x] Breakpoints 1440/1068/833/734/640/480: ≤734px upload e KPIs empilham 1 coluna, tabelas com scroll horizontal, hero 56→28px.
+- [x] Alvos ≥ 44×44, labels em todos os inputs, contraste `#1d1d1f` sobre `#fff`, navegação por teclado no Streamlit.
+- [x] Teste manual: 390px (mobile) e 1440px (desktop) sem sobreposição; Lighthouse a11y sem erro crítico.
 
 Critério de aceite: fluxo completo em ≤ 7 cliques mobile e desktop; nenhum texto inglês visível; DESIGN checklist §11 passa.
 
-DoD S3: app roda `streamlit run app.py`, fluxo fim-a-fim com fixtures, visual reprova se fora dos tokens.
+DoD S3: app roda `streamlit run app.py`, fluxo fim-a-fim com fixtures, visual reprova se fora dos tokens. ✅ Concluída.
+
+Nota S3: `global-nav`/`sub-nav` removidos por decisão do produto (seções já numeradas dispensam steps); aba `Duplicadas` incluída além das 5 previstas.
 
 ---
 
@@ -428,7 +430,7 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 - [x] S0-T01 → S0-T02 → S0-T03 (gates verdes)
 - [x] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
 - [x] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
-- [ ] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
+- [x] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
 - [ ] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
 
 Cada task só fecha com `pytest` da sua área verde + `ruff check` limpo + aceite da seção marcado.
