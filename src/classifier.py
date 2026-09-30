@@ -35,12 +35,14 @@ _MATCH_COLUMNS = [
 
 def _params_snapshot(params: dict) -> dict:
     '''Build deterministic snapshot with app version.'''
+    base = {} if not isinstance(params, dict) else dict(params)
+    version = base.get('APP_VERSION', base.get('app_version', APP_VERSION))
     return {
-        'date_tolerance_days': params.get('date_tolerance_days', DATE_TOLERANCE_DAYS),
-        'fuzzy_threshold': params.get('fuzzy_threshold', FUZZY_THRESHOLD),
-        'value_tolerance': params.get('value_tolerance', VALUE_TOLERANCE),
-        'use_fuzzy': params.get('use_fuzzy', True),
-        'app_version': APP_VERSION,
+        'date_tolerance_days': base.get('date_tolerance_days', DATE_TOLERANCE_DAYS),
+        'fuzzy_threshold': base.get('fuzzy_threshold', FUZZY_THRESHOLD),
+        'value_tolerance': base.get('value_tolerance', VALUE_TOLERANCE),
+        'use_fuzzy': base.get('use_fuzzy', True),
+        'APP_VERSION': str(version),
     }
 
 

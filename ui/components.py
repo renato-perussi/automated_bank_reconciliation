@@ -104,7 +104,7 @@ def calc_kpis(results: dict, statement_count: int, ledger_count: int) -> dict:
         pct_auto = round(auto_count / unified * 100, 1)
         pct_review = round(potential_count / unified * 100, 1)
         pct_pending = round(pending_count / unified * 100, 1)
-        pct_divergent = round(divergent_count / unified * 100, 1)
+        pct_divergent = round((divergent_count + duplicate_count) / unified * 100, 1)
     exception_rate = round(100.0 - pct_auto, 1)
     return {
         'total_statement': int(statement_count),

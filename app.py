@@ -15,6 +15,7 @@ from src.logger import get_logger
 from src.mapping import apply_mapping, auto_map_columns, get_mapping_options
 from src.matcher import build_params
 from src.normalize import normalize_table
+from src.report import build_conciliation_workbook, build_exceptions_csv
 from src.validate import collect_errors
 from ui.components import (
     build_comparison_frame,
@@ -136,13 +137,27 @@ def finalize_source(raw_frame: pd.DataFrame, mapping: dict, source: str) -> tupl
         return empty, pd.DataFrame(columns=['Linha', 'Motivo', 'Orientação'])
 
 
+def format_error_display(frame: pd.DataFrame) -> pd.DataFrame:
+    '''Translate Orientação to Como corrigir for display.'''
+    columns = ['Linha', 'Motivo', 'Como corrigir']
+    if frame is None or len(frame) == 0:
+        return pd.DataFrame(columns=columns)
+    work = frame.copy()
+    if 'Orientação' in list(work.columns) and 'Como corrigir' not in list(work.columns):
+        work = work.rename(columns={'Orientação': 'Como corrigir'})
+    for field in columns:
+        if field not in list(work.columns):
+            work[field] = ''
+    return work[columns]
+
+
 def show_preview_errors(raw_frame: pd.DataFrame, error_frame: pd.DataFrame) -> None:
     '''Show five row preview plus pt-BR error table.'''
     st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
     st.dataframe(get_preview(raw_frame, 5), use_container_width=True)
     if error_frame is not None and len(error_frame) > 0:
         st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
-        st.dataframe(error_frame, use_container_width=True)
+        st.dataframe(format_error_display(error_frame), use_container_width=True)
 
 
 def render_single_upload(
@@ -306,10 +321,12 @@ def _apply_manual_kpis(kpis: dict) -> dict:
     pct_review = round(pot_len / unified * 100, 1)
     pending_div = pending_len + divergent_len + dup_len
     pct_pending = round(pending_div / unified * 100, 1) if unified else 0.0
+    pct_divergent = round((divergent_len + dup_len) / unified * 100, 1)
     updated = dict(kpis)
     updated['pct_auto'] = float(pct_auto)
     updated['pct_review'] = float(pct_review)
     updated['pct_pending'] = float(pct_pending)
+    updated['pct_divergent'] = float(pct_divergent)
     updated['exception_rate'] = round(100.0 - pct_auto, 1)
     return updated
 
@@ -547,9 +564,9 @@ def render_error_tab() -> None:
     statement_errors = st.session_state.get('statement_errors')
     ledger_errors = st.session_state.get('ledger_errors')
     st.markdown('<p class="body-text">Erros do extrato</p>', unsafe_allow_html=True)
-    render_status_table(statement_errors)
+    render_status_table(format_error_display(statement_errors))
     st.markdown('<p class="body-text">Erros do interno</p>', unsafe_allow_html=True)
-    render_status_table(ledger_errors)
+    render_status_table(format_error_display(ledger_errors))
 
 
 def render_results_section() -> None:
@@ -574,28 +591,26 @@ def render_results_section() -> None:
         render_error_tab()
 
 
-def render_review_section() -> None:
-    '''Render side by side review with confirm reject.'''
-    results = st.session_state.get('results')
-    if results is None:
-        return
-    potential = results.get('potential')
-    if potential is None or len(potential) == 0:
-        return
-    st.markdown('<h2 class="display-md">Revisão lado a lado</h2>', unsafe_allow_html=True)
+def _filtered_review_rows(potential: object) -> object:
+    '''Filter potential removing confirmed rejected pairs.'''
     confirmed = st.session_state.get('manual_confirmed', set())
     rejected = st.session_state.get('manual_rejected', set())
-    available = potential[~potential['match_id'].isin(set(confirmed) | set(rejected))]
-    if len(available) == 0:
-        st.markdown(
-            '<p class="body-text">Nenhum par disponível para revisão.</p>', unsafe_allow_html=True
-        )
-        render_history()
-        return
+    blocked = set(confirmed) | set(rejected)
+    if 'match_id' not in potential.columns:
+        return potential
+    return potential[~potential['match_id'].isin(blocked)]
+
+
+def _pick_review_row(available: object) -> tuple:
+    '''Select review pair returning chosen row.'''
     options = available['match_id'].astype(str).tolist()
     chosen = st.selectbox('Selecione o par para revisão', options, key='review_pick')
     row = available[available['match_id'].astype(str) == str(chosen)].iloc[0]
-    render_pair_detail(row)
+    return (chosen, row)
+
+
+def _render_review_actions(chosen: str) -> None:
+    '''Render confirm reject buttons plus feedback history.'''
     confirm_col, reject_col, _ = st.columns([1, 1, 3])
     with confirm_col:
         if st.button('Confirmar', key='confirm_pair', type='primary', use_container_width=True):
@@ -605,6 +620,27 @@ def render_review_section() -> None:
             reject_pair(str(chosen))
     _render_feedback()
     render_history()
+
+
+def render_review_section() -> None:
+    '''Render side by side review with confirm reject.'''
+    results = st.session_state.get('results')
+    if results is None:
+        return
+    potential = results.get('potential')
+    if potential is None or len(potential) == 0:
+        return
+    st.markdown('<h2 class="display-md">Revisão lado a lado</h2>', unsafe_allow_html=True)
+    available = _filtered_review_rows(potential)
+    if len(available) == 0:
+        st.markdown(
+            '<p class="body-text">Nenhum par disponível para revisão.</p>', unsafe_allow_html=True
+        )
+        render_history()
+        return
+    chosen, row = _pick_review_row(available)
+    render_pair_detail(row)
+    _render_review_actions(chosen)
 
 
 def _render_feedback() -> None:
@@ -770,6 +806,96 @@ def undo_last_review() -> None:
     st.rerun()
 
 
+def render_sticky_bar(kpis: dict) -> None:
+    '''Render floating persistent indicators bar.'''
+    auto_text = format_pct(kpis.get('pct_auto', 0.0))
+    review_text = format_pct(kpis.get('pct_review', 0.0))
+    exception_text = format_pct(kpis.get('exception_rate', 0.0))
+    st.markdown(
+        '<div class="floating-sticky-bar">'
+        '<div class="sticky-metric"><div class="kpi-label">Conciliado</div>'
+        f'<div class="kpi-value">{auto_text}</div></div>'
+        '<div class="sticky-metric"><div class="kpi-label">Para revisão</div>'
+        f'<div class="kpi-value">{review_text}</div></div>'
+        '<div class="sticky-metric"><div class="kpi-label">Taxa de exceção</div>'
+        f'<div class="kpi-value">{exception_text}</div></div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def build_export_payloads() -> tuple:
+    '''Build excel csv bytes in memory without files.'''
+    results = st.session_state.get('results')
+    params = st.session_state.get('params', build_params())
+    statement_frame = st.session_state.get('statement_df')
+    ledger_frame = st.session_state.get('ledger_df')
+    statement_errors = st.session_state.get('statement_errors')
+    ledger_errors = st.session_state.get('ledger_errors')
+    review_log = st.session_state.get('review_log', [])
+    errors = {'statement': statement_errors, 'ledger': ledger_errors}
+    try:
+        excel_bytes = build_conciliation_workbook(
+            results, params, statement_frame, ledger_frame, errors, review_log
+        )
+    except (ValueError, KeyError, RuntimeError) as exc:
+        logger.warning(f'Excel build failed with {exc}')
+        excel_bytes = b''
+    try:
+        csv_bytes = build_exceptions_csv(
+            results, params, statement_frame, ledger_frame, errors, review_log
+        )
+    except (ValueError, KeyError, RuntimeError) as exc:
+        logger.warning(f'Csv build failed with {exc}')
+        csv_bytes = b''
+    return excel_bytes, csv_bytes
+
+
+def render_download_buttons(excel_bytes: bytes, csv_bytes: bytes) -> None:
+    '''Render two side by side download actions.'''
+    left, right = st.columns(2)
+    with left:
+        st.download_button(
+            'Baixar Excel',
+            data=excel_bytes,
+            file_name='relatorio_conciliacao.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            key='download_excel',
+            use_container_width=True,
+            type='primary',
+        )
+    with right:
+        st.download_button(
+            'Baixar CSV de exceções',
+            data=csv_bytes,
+            file_name='relatorio_excecoes.csv',
+            mime='text/csv',
+            key='download_csv',
+            use_container_width=True,
+            type='primary',
+        )
+
+
+def render_export_section() -> None:
+    '''Render download buttons plus sticky indicators.'''
+    results = st.session_state.get('results')
+    if results is None:
+        return
+    kpis = _export_kpis(results)
+    st.markdown('<h2 class="display-md">Exportar relatórios</h2>', unsafe_allow_html=True)
+    excel_bytes, csv_bytes = build_export_payloads()
+    render_download_buttons(excel_bytes, csv_bytes)
+    render_sticky_bar(kpis)
+
+
+def _export_kpis(results: dict) -> dict:
+    '''Calculate kpis for sticky export bar.'''
+    statement_frame = st.session_state.get('statement_df')
+    ledger_frame = st.session_state.get('ledger_df')
+    statement_count = 0 if statement_frame is None else len(statement_frame)
+    ledger_count = 0 if ledger_frame is None else len(ledger_frame)
+    return calc_kpis(results, statement_count, ledger_count)
+
+
 def render_footer() -> None:
     '''Render parchment footer with version.'''
     st.markdown(
@@ -789,6 +915,7 @@ def main() -> None:
     render_kpi_section()
     render_results_section()
     render_review_section()
+    render_export_section()
     render_footer()
 
 

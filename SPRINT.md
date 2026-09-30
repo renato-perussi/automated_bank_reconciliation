@@ -341,12 +341,12 @@ Objetivo: fechar o valor principal (relatório de exceções) e provar NFRs + Do
 
 Arquivo: `src/report.py`.
 
-- [ ] `calc_kpis(results)` retornando dict inglês (`total_statement`, `total_ledger`, `pct_auto`, `pct_review`, `pct_pending`, `pct_divergent`, `exception_rate`) exibido em pt-BR.
-- [ ] `build_conciliation_workbook(results, params)` gerando `relatorio_conciliacao.xlsx` com abas pt-BR: `Resumo` (KPIs + snapshot params + `APP_VERSION`), `Conciliadas`, `Para_Revisao`, `Pendentes`, `Divergentes`, `Erros`, `Log_Regras` via `openpyxl`.
-- [ ] `build_exceptions_csv(results)` gerando `relatorio_excecoes.csv` só com não conciliados, ordenado por `Valor normalizado desc`, header pt-BR do §10.2.
-- [ ] `format_brl(value)` para exibição (`R$ 4.800,00`), mantendo `Decimal` interno.
-- [ ] Snapshot obrigatório em ambos: `date_tolerance_days`, `fuzzy_threshold`, `value_tolerance`, `APP_VERSION`.
-- [ ] Testes `tests/test_report.py`: abas existem, headers pt-BR, ordenação, snapshot presente.
+- [x] `calc_kpis(results)` retornando dict inglês (`total_statement`, `total_ledger`, `pct_auto`, `pct_review`, `pct_pending`, `pct_divergent`, `exception_rate`) exibido em pt-BR.
+- [x] `build_conciliation_workbook(results, params)` gerando `relatorio_conciliacao.xlsx` com abas pt-BR: `Resumo` (KPIs + snapshot params + `APP_VERSION`), `Conciliadas`, `Para_Revisao`, `Pendentes`, `Divergentes`, `Erros`, `Log_Regras` via `openpyxl`.
+- [x] `build_exceptions_csv(results)` gerando `relatorio_excecoes.csv` só com não conciliados, ordenado por `Valor normalizado desc`, header pt-BR do §10.2.
+- [x] `format_brl(value)` para exibição (`R$ 4.800,00`), mantendo `Decimal` interno.
+- [x] Snapshot obrigatório em ambos: `date_tolerance_days`, `fuzzy_threshold`, `value_tolerance`, `APP_VERSION`.
+- [x] Testes `tests/test_report.py`: abas existem, headers pt-BR, ordenação, snapshot presente.
 
 Critério de aceite: RF-019/020 — Excel com 7 abas + CSV só exceções, ambos com snapshot; headers 100% pt-BR.
 
@@ -354,44 +354,44 @@ Critério de aceite: RF-019/020 — Excel com 7 abas + CSV só exceções, ambos
 
 Arquivos: `src/report.py` + `app.py`.
 
-- [ ] `build_rule_log(results)` com por decisão: `rule_id` (RN-01…), `match_id`, `day_diff`, `value_diff`, `description_score`, `params_snapshot`, `reason`, `error_code` quando aplicável.
-- [ ] T-07 Exportação: botões download `st.download_button('Baixar Excel', ...)` + `'Baixar CSV de exceções'` (`{component.button-pearl-capsule}` secundário) + `{component.floating-sticky-bar}` com KPIs persistentes + `{component.footer}` parchment com versão.
-- [ ] T-08 Erros: tabela pt-BR `Linha | Motivo | Como corrigir` + `{component.icon-circular}`; sem vermelho de marca (usar ink + texto).
-- [ ] RN-10: ação manual registra `review_action` + timestamp, sobrescreve auto, reversível na sessão, visível no log.
-- [ ] Teste: cada linha `auto`/`potential` tem `rule_id`; confirmação manual aparece no log.
+- [x] `build_rule_log(results)` com por decisão: `rule_id` (RN-01…), `match_id`, `day_diff`, `value_diff`, `description_score`, `params_snapshot`, `reason`, `error_code` quando aplicável.
+- [x] T-07 Exportação: botões download `st.download_button('Baixar Excel', ...)` + `'Baixar CSV de exceções'` (`{component.button-pearl-capsule}` secundário) + `{component.floating-sticky-bar}` com KPIs persistentes + `{component.footer}` parchment com versão.
+- [x] T-08 Erros: tabela pt-BR `Linha | Motivo | Como corrigir` + `{component.icon-circular}`; sem vermelho de marca (usar ink + texto).
+- [x] RN-10: ação manual registra `review_action` + timestamp, sobrescreve auto, reversível na sessão, visível no log.
+- [x] Teste: cada linha `auto`/`potential` tem `rule_id`; confirmação manual aparece no log.
 
 Critério de aceite: RF-021 — 100% das decisões com regra; log visível e exportável; ação manual auditada.
 
 ### S4-T03 — Hardening NFRs: performance, resiliência, segurança, portabilidade
 
-- [ ] NFR-001/NFR-003: script `scripts/bench.py` gerando 5k x 5k sintéticos, assert < 30s; > 20k emitir aviso pt-BR `'Volume alto: resultado pode demorar.'`
-- [ ] NFR-002: preview 20 MB < 3s (medir com `time`).
-- [ ] NFR-004/NFR-005: provar offline (desconectar rede, rodar matching); `grep -r 'requests|http' src` vazio exceto Streamlit.
-- [ ] NFR-006: teste path traversal (`'../../etc/passwd.csv'`) rejeitado; > 20 MB rejeitado.
-- [ ] NFR-015: teste linha corrompida no meio do CSV não aborta lote.
-- [ ] NFR-016: teste idempotência (2 runs mesmos arquivos+params → DataFrames iguais).
-- [ ] NFR-011/NFR-012: matriz `matrix/` passa em Linux; documentar Windows/macOS (`pip install` + `streamlit run`).
-- [ ] NFR-008: contagem de cliques upload→relatório ≤ 7.
+- [x] NFR-001/NFR-003: script `scripts/bench.py` gerando 5k x 5k sintéticos, assert < 30s; > 20k emitir aviso pt-BR `'Volume alto: resultado pode demorar.'`
+- [x] NFR-002: preview 20 MB < 3s (medir com `time`).
+- [x] NFR-004/NFR-005: provar offline (desconectar rede, rodar matching); `grep -r 'requests|http' src` vazio exceto Streamlit.
+- [x] NFR-006: teste path traversal (`'../../etc/passwd.csv'`) rejeitado; > 20 MB rejeitado.
+- [x] NFR-015: teste linha corrompida no meio do CSV não aborta lote.
+- [x] NFR-016: teste idempotência (2 runs mesmos arquivos+params → DataFrames iguais).
+- [x] NFR-011/NFR-012: matriz `matrix/` passa em Linux; documentar Windows/macOS (`pip install` + `streamlit run`).
+- [x] NFR-008: contagem de cliques upload→relatório ≤ 7.
 
 Critério de aceite: todos os NFRs com evidência (tempo, log, teste).
 
 ### S4-T04 — DoD final + README + verificação ponta a ponta
 
-- [ ] Rodar checklist `PRD.md §15` item a item:
-  - [ ] exemplos §10 reproduzem Casos A–D §9.1 com defaults
-  - [ ] valor isolado nunca auto; duplicidade bloqueia; sinal oposto nunca casa
-  - [ ] relatórios + KPIs corretos
-  - [ ] 5k x 5k < 30s; offline; `pip install` + `streamlit run` OK
-  - [ ] código inglês + aspas simples + sem comentários + `ruff` limpo + funções ≤ ~30 linhas
-  - [ ] `pytest --cov=src` verde, motor ≥ 80%
-  - [ ] visual DESIGN.md (body 17px, `#0066cc` único, pill, sem sombra, responsivo)
-- [ ] Finalizar `README.md` pt-BR: o que é, como instalar, como usar (7 passos), formato `Data,Descrição,Valor`, parâmetros, relatórios, solução de erros comuns.
-- [ ] `git status` limpo para `data/output/` (ignorado), fixtures versionadas.
-- [ ] Registro de decisão: o que fica para pós-MVP (CNAB, 1:N por soma, login, ERP/Open Finance, PDF/OCR) — não implementar.
+- [x] Rodar checklist `PRD.md §15` item a item:
+  - [x] exemplos §10 reproduzem Casos A–D §9.1 com defaults
+  - [x] valor isolado nunca auto; duplicidade bloqueia; sinal oposto nunca casa
+  - [x] relatórios + KPIs corretos
+  - [x] 5k x 5k < 30s; offline; `pip install` + `streamlit run` OK
+  - [x] código inglês + aspas simples + sem comentários + `ruff` limpo + funções ≤ ~30 linhas
+  - [x] `pytest --cov=src` verde, motor ≥ 80%
+  - [x] visual DESIGN.md (body 17px, `#0066cc` único, pill, sem sombra, responsivo)
+- [x] Finalizar `README.md` pt-BR: o que é, como instalar, como usar (7 passos), formato `Data,Descrição,Valor`, parâmetros, relatórios, solução de erros comuns.
+- [x] `git status` limpo para `data/output/` (ignorado), fixtures versionadas.
+- [x] Registro de decisão: o que fica para pós-MVP (CNAB, 1:N por soma, login, ERP/Open Finance, PDF/OCR) — não implementar.
 
 Critério de aceite: DoD 100% marcado com evidência (logs de `pytest`, `ruff`, bench, screenshots 390px/1440px).
 
-DoD S4 (release MVP): app instalável, conciliando exemplos do PRD, com relatório de exceções exportável e log auditável.
+DoD S4 (release MVP): app instalável, conciliando exemplos do PRD, com relatório de exceções exportável e log auditável. ✅ Concluída.
 
 ---
 
@@ -431,6 +431,6 @@ RN-01 – RN-08 em S2-T01/T02/T03; RN-09/RN-10 em S1-T03/S4-T02; NFR-009/DESIGN 
 - [x] S1-T01 → S1-T02 → S1-T03 → S1-T04 (tabelas limpas)
 - [x] S2-T01 → S2-T02 → S2-T03 → S2-T04 (motor + Casos A–D)
 - [x] S3-T01 → S3-T02 → S3-T03 → S3-T04 (UI + DESIGN)
-- [ ] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
+- [x] S4-T01 → S4-T02 → S4-T03 → S4-T04 (relatórios + DoD)
 
 Cada task só fecha com `pytest` da sua área verde + `ruff check` limpo + aceite da seção marcado.

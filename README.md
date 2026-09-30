@@ -47,8 +47,8 @@ Fluxo em 7 passos:
 3. Envie os lançamentos internos em CSV ou Excel.
 4. Confira as colunas Data, Descrição e Valor e veja a prévia de 5 linhas.
 5. Ajuste a tolerância de dias, a similaridade mínima e a tolerância de valor.
-6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes e Erros.
-7. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
+6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes, Duplicadas e Erros. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
+7. Clique em Baixar Excel para o relatório completo e em Baixar CSV de exceções para a lista só com pendências. A barra fixa mostra os indicadores e o rodapé mostra a versão.
 
 Você pode testar com os arquivos de exemplo em `data/examples/`:
 
@@ -80,10 +80,34 @@ Dica: no CSV, quando o valor tem vírgula, deixe ele entre aspas. O Excel e o Li
 Você poderá ajustar na tela, mas os valores iniciais são:
 
 - Tolerância de dias: 2 (cobre compensação de 1 dia, ex.: 11/09 com 12/09).
-- Similaridade mínima da descrição: 85 de 0 a 100.
-- Tolerância de valor: R$ 0,00 (exige valor exato).
+- Similaridade mínima da descrição: 85 de 0 a 100. Desligue a chave Usar similaridade para ignorar o texto.
+- Tolerância de valor: R$ 0,00 (exige valor exato). Ex.: 0,05 permite diferença de centavos.
 
-Limites de segurança: arquivo até 20 MB, aviso se passar de 20000 linhas.
+Limites de segurança: arquivo até 20 MB, aviso se passar de 20000 linhas com Volume alto: resultado pode demorar.
+
+## Relatórios
+
+Na tela, após conciliar, use a seção Exportar relatórios. Os arquivos saem na hora, sem salvar na pasta do projeto:
+
+- `relatorio_conciliacao.xlsx` com abas Resumo, Conciliadas, Para_Revisao, Pendentes, Divergentes, Duplicadas, Erros e Log_Regras. O Resumo traz os indicadores, os parâmetros usados e a versão do motor. As abas de detalhe usam as colunas Origem, Data original, Data normalizada, Descrição original, Valor original, Valor normalizado, Sinal, Status, Par ID, Diferença dias, Diferença valor, Score descrição, Regra ID, Motivo e Ação manual. A aba Erros usa Linha, Motivo e Como corrigir. A aba Log_Regras mostra cada decisão com regra, diferenças, motivo e ação manual com data e hora.
+- `relatorio_excecoes.csv` só com o que não conciliou (Para revisão, Pendente, Divergente, Duplicada e Erros), ordenado por Valor normalizado do maior para o menor. O início do arquivo traz os parâmetros e a versão.
+
+Os dois relatórios guardam o retrato dos parâmetros (tolerância de dias, similaridade mínima, tolerância de valor e versão) para auditoria.
+
+## Erros comuns
+
+| Mensagem na tela | O que fazer |
+|---|---|
+| Formato não suportado. Envie CSV ou Excel. | Envie arquivo .csv, .xls ou .xlsx. PDF e txt não entram. |
+| Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor. | Confira se o arquivo tem cabeçalho e ao menos 1 linha. |
+| Arquivo acima de 20 MB. | Divida o arquivo em meses menores e envie de novo. |
+| Coluna obrigatória não encontrada: Valor. Mapeie manualmente. | Nos campos Data, Descrição e Valor, escolha a coluna certa de cada arquivo. |
+| Data inválida na linha 7. Use DD/MM/AAAA. | Corrija a data para 10/09/2026 ou 2026-09-10 e reimporte. |
+| Valor inválido na linha 9. Ex.: -R$ 2.500,00. | Corrija o valor com número e sinal e reimporte. |
+| Nome de arquivo inválido. Verifique o arquivo enviado. | Renomeie sem .. ou pastas e envie de novo. |
+| Volume alto: resultado pode demorar. | Acima de 20000 linhas o cálculo demora mais. Aguarde ou divida o lote. |
+
+Uma linha com erro não para o lote. As linhas boas seguem para a conciliação e as ruins ficam na aba Erros.
 
 ## Como rodar os testes
 
@@ -97,18 +121,35 @@ Para ver a cobertura do código:
 .venv/bin/python -m pytest --cov=src -q
 ```
 
+Para medir o desempenho com 5000 linhas de cada lado:
+
+```bash
+.venv/bin/python -m scripts.bench
+```
+
 ## Como verificar o estilo do código
 
 ```bash
-.venv/bin/python -m ruff check src tests
+.venv/bin/python -m ruff check src tests app.py ui scripts
 ```
 
 Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 ## Pastas do projeto
 
-- `src/`: código principal (configurações, leitura, comparação e classificação).
-- `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas da S3).
+- `src/`: código principal (configurações, leitura, comparação, classificação e relatórios).
+- `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas).
+- `scripts/`: apoio como `bench.py` para medir 5000 x 5000 em menos de 30 segundos.
 - `tests/fixtures/`: arquivos pequenos de exemplo para testes, incluindo a pasta `matrix/` com variações.
 - `data/examples/`: cópia dos exemplos para você testar à mão.
-- `data/output/`: onde saem os relatórios (esta pasta é ignorada no git).
+- `data/output/`: onde saem os relatórios se você salvar à mão (esta pasta é ignorada no git).
+
+## Depois do MVP (não fazer agora)
+
+Estes itens ficam para depois e não estão no programa atual:
+
+- Arquivo CNAB 240 ou 400.
+- Conciliação 1:N por soma de valores.
+- Tela de login com usuários e permissões.
+- Ligação com ERP ou Open Finance.
+- Leitura de PDF de extrato ou OCR de imagem.

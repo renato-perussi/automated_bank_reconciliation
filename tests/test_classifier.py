@@ -417,7 +417,7 @@ def test_build_five_tables_shape() -> None:
         ):
             assert field in list(frame.columns)
     snapshot = tables['potential'].iloc[0]['params_snapshot']
-    assert snapshot['app_version'] == '1.0.0'
+    assert snapshot['APP_VERSION'] == '1.0.0'
     assert snapshot['date_tolerance_days'] == 2
     assert tables['potential'].iloc[0]['match_id'] == 's0-l0'
 
