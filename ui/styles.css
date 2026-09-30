@@ -295,17 +295,6 @@ div[data-testid='stVerticalBlock']:has(
   box-shadow: none;
 }
 
-.footer {
-  background: #f5f5f7;
-  color: #333333;
-  padding: 64px 24px;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.0;
-  letter-spacing: -0.12px;
-  text-align: center;
-}
-
 .upload-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -321,6 +310,21 @@ div[data-testid='stVerticalBlock']:has(
 .table-wrap {
   overflow-x: auto;
   width: 100%;
+}
+
+.export-center {
+  text-align: center;
+}
+
+.review-divider {
+  border-top: 1px solid #e0e0e0;
+  margin: 24px 0 16px;
+}
+
+div[data-testid='stMainBlockContainer'] {
+  max-width: 1440px;
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 div.stButton > button {

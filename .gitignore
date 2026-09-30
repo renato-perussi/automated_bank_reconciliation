@@ -177,3 +177,6 @@ pyrightconfig.json
 data/output/*
 *.pyc
 .streamlit/secrets.toml
+
+# Streamlit agent skills (environment-specific symlinks)
+.agents/skills/developing-with-streamlit

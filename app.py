@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from src.classifier import build_result_tables
-from src.config import APP_VERSION, DATE_TOLERANCE_DAYS, FUZZY_THRESHOLD, VALUE_TOLERANCE
+from src.config import DATE_TOLERANCE_DAYS, FUZZY_THRESHOLD, VALUE_TOLERANCE
 from src.loader import get_preview, load_table, validate_not_empty
 from src.logger import get_logger
 from src.mapping import apply_mapping, auto_map_columns, get_mapping_options
@@ -153,11 +153,12 @@ def format_error_display(frame: pd.DataFrame) -> pd.DataFrame:
 
 def show_preview_errors(raw_frame: pd.DataFrame, error_frame: pd.DataFrame) -> None:
     '''Show five row preview plus pt-BR error table.'''
-    st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
-    st.dataframe(get_preview(raw_frame, 5), use_container_width=True)
-    if error_frame is not None and len(error_frame) > 0:
-        st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
-        st.dataframe(format_error_display(error_frame), use_container_width=True)
+    with st.expander('Prévia e erros', expanded=False):
+        st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
+        st.dataframe(get_preview(raw_frame, 5), use_container_width=True)
+        if error_frame is not None and len(error_frame) > 0:
+            st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
+            st.dataframe(format_error_display(error_frame), use_container_width=True)
 
 
 def render_single_upload(
@@ -182,14 +183,14 @@ def render_single_upload(
 
 
 def render_upload_section() -> None:
-    '''Render two side by side upload cards.'''
-    st.markdown('<h2 class="display-md">1 Upload dos arquivos</h2>', unsafe_allow_html=True)
+    '''Render title plus two upload cards side by side.'''
+    st.markdown('<h2 class="display-md">Upload dos arquivos</h2>', unsafe_allow_html=True)
     st.markdown(
         '<p class="body-text">Envie o extrato e os lançamentos internos em CSV ou Excel.</p>',
         unsafe_allow_html=True,
     )
-    left, right = st.columns(2)
-    with left:
+    left_upload, right_upload = st.columns(2, gap='medium')
+    with left_upload:
         with st.container(border=True):
             render_single_upload(
                 'Extrato bancário (CSV ou Excel)',
@@ -198,7 +199,7 @@ def render_upload_section() -> None:
                 'statement_errors',
                 'statement',
             )
-    with right:
+    with right_upload:
         with st.container(border=True):
             render_single_upload(
                 'Lançamentos internos (CSV ou Excel)',
@@ -211,7 +212,7 @@ def render_upload_section() -> None:
 
 def render_params_section() -> None:
     '''Render tolerance controls storing engine params.'''
-    st.markdown('<h2 class="display-md">2 Parâmetros</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="display-md">Parâmetros</h2>', unsafe_allow_html=True)
     date_tolerance_days = st.slider('Tolerância de dias', 0, 30, DATE_TOLERANCE_DAYS)
     st.markdown(
         '<p class="help-muted">2 dias cobre compensação D+1.</p>', unsafe_allow_html=True
@@ -241,7 +242,9 @@ def render_params_section() -> None:
 
 def render_concile_button() -> None:
     '''Execute matching storing five result tables.'''
-    pressed = st.button('Conciliar', key='concile_action', type='primary')
+    pressed = st.button(
+        'Conciliar', key='concile_action', type='primary', use_container_width=True
+    )
     if not pressed:
         return
     statement_frame = st.session_state.get('statement_df')
@@ -282,10 +285,25 @@ def _adjusted_counts() -> tuple:
     return (auto_len, pot_len, pending_len, divergent_len, duplicate_len, unified, len(confirmed))
 
 
+def render_empty_results() -> None:
+    '''Render placeholder keeping right panel visible.'''
+    st.markdown('<h2 class="display-md">Resultados</h2>', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(
+            '<p class="body-text">Nenhum resultado ainda.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<p class="help-muted">Envie os dois arquivos e clique em Conciliar.</p>',
+            unsafe_allow_html=True,
+        )
+
+
 def render_kpi_section() -> None:
     '''Render five indicators plus exception bar.'''
     results = st.session_state.get('results')
     if results is None:
+        render_empty_results()
         return
     statement_frame = st.session_state.get('statement_df')
     ledger_frame = st.session_state.get('ledger_df')
@@ -293,7 +311,7 @@ def render_kpi_section() -> None:
     ledger_count = 0 if ledger_frame is None else len(ledger_frame)
     kpis = calc_kpis(results, statement_count, ledger_count)
     kpis = _apply_manual_kpis(kpis)
-    st.markdown('<h2 class="display-md">3 Resultados</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="display-md">Resultados</h2>', unsafe_allow_html=True)
     cols = st.columns(5)
     with cols[0]:
         render_kpi_card('Total extrato', str(kpis['total_statement']))
@@ -376,6 +394,19 @@ def filter_by_value(frame: pd.DataFrame, low: float, high: float) -> pd.DataFram
     return frame[keep]
 
 
+def _filter_match_display(display: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    '''Apply search value period filters inside expander.'''
+    with st.expander('Filtros', expanded=False):
+        query = st.text_input('Buscar descrição', key=f'{prefix}_search')
+        filtered = filter_by_text(display, query)
+        low, high = _value_bounds(filtered)
+        picked = st.slider('Valor', low, high, (low, high), key=f'{prefix}_value')
+        filtered = filter_by_value(filtered, float(picked[0]), float(picked[1]))
+        period = st.date_input('Período', value=None, key=f'{prefix}_period')
+        start, end = _normalize_period(period)
+        return filter_by_period(filtered, start, end)
+
+
 def render_match_tab(
     match_frame: pd.DataFrame, prefix: str, empty_label: str
 ) -> None:
@@ -386,14 +417,7 @@ def render_match_tab(
     rejected = st.session_state.get('manual_rejected', set())
     active = _active_frame(match_frame, prefix, confirmed, rejected)
     display = build_match_display(active, statement_frame, ledger_frame, confirmed)
-    query = st.text_input('Buscar descrição', key=f'{prefix}_search')
-    display = filter_by_text(display, query)
-    low, high = _value_bounds(display)
-    picked = st.slider('Valor', low, high, (low, high), key=f'{prefix}_value')
-    display = filter_by_value(display, float(picked[0]), float(picked[1]))
-    period = st.date_input('Período', value=None, key=f'{prefix}_period', format='DD/MM/YYYY')
-    start, end = _normalize_period(period)
-    display = filter_by_period(display, start, end)
+    display = _filter_match_display(display, prefix)
     if len(display) == 0:
         st.markdown(f'<p class="body-text">{empty_label}</p>', unsafe_allow_html=True)
         return
@@ -534,25 +558,32 @@ def _pending_bounds(left: pd.DataFrame, right: pd.DataFrame) -> tuple:
     return _value_bounds(combined)
 
 
+def _filter_pending_sides(left_base: pd.DataFrame, right_base: pd.DataFrame) -> tuple:
+    '''Apply pending search value period inside expander.'''
+    with st.expander('Filtros', expanded=False):
+        query = st.text_input('Buscar descrição', key='pending_search')
+        left_filtered = filter_by_text(left_base, query)
+        right_filtered = filter_by_text(right_base, query)
+        low, high = _pending_bounds(left_filtered, right_filtered)
+        picked = st.slider('Valor', low, high, (low, high), key='pending_value')
+        left_out = filter_by_value(left_filtered, float(picked[0]), float(picked[1]))
+        right_out = filter_by_value(right_filtered, float(picked[0]), float(picked[1]))
+        period = st.date_input('Período', value=None, key='pending_period')
+        start, end = _normalize_period(period)
+        left_out = filter_by_period(left_out, start, end)
+        right_out = filter_by_period(right_out, start, end)
+        return (left_out, right_out)
+
+
 def render_pending_tab() -> None:
     '''Render two unmatched tables with filters.'''
     results = st.session_state.get('results')
     pending = results.get('pending') if results else pd.DataFrame()
     statement_frame = st.session_state.get('statement_df')
     ledger_frame = st.session_state.get('ledger_df')
-    query = st.text_input('Buscar descrição', key='pending_search')
     left_base = build_pending_side(pending, statement_frame, 'statement')
-    left_base = filter_by_text(left_base, query)
     right_base = build_pending_side(pending, ledger_frame, 'ledger')
-    right_base = filter_by_text(right_base, query)
-    low, high = _pending_bounds(left_base, right_base)
-    picked = st.slider('Valor', low, high, (low, high), key='pending_value')
-    left_display = filter_by_value(left_base, float(picked[0]), float(picked[1]))
-    right_display = filter_by_value(right_base, float(picked[0]), float(picked[1]))
-    period = st.date_input('Período', value=None, key='pending_period', format='DD/MM/YYYY')
-    start, end = _normalize_period(period)
-    left_display = filter_by_period(left_display, start, end)
-    right_display = filter_by_period(right_display, start, end)
+    left_display, right_display = _filter_pending_sides(left_base, right_base)
     st.markdown('<p class="body-text">Extrato sem par</p>', unsafe_allow_html=True)
     render_status_table(left_display)
     st.markdown('<p class="body-text">Interno sem par</p>', unsafe_allow_html=True)
@@ -581,6 +612,7 @@ def render_results_section() -> None:
         render_match_tab(results.get('auto'), 'auto', 'Nenhuma conciliada ainda.')
     with tabs[1]:
         render_match_tab(results.get('potential'), 'potential', 'Nenhum par para revisão.')
+        render_review_section()
     with tabs[2]:
         render_pending_tab()
     with tabs[3]:
@@ -623,14 +655,19 @@ def _render_review_actions(chosen: str) -> None:
 
 
 def render_review_section() -> None:
-    '''Render side by side review with confirm reject.'''
+    '''Render side by side review inside revision tab.'''
     results = st.session_state.get('results')
     if results is None:
         return
     potential = results.get('potential')
     if potential is None or len(potential) == 0:
         return
-    st.markdown('<h2 class="display-md">Revisão lado a lado</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="review-divider"></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="body-text"><span class="label-strong">Resultado lado a lado</span>'
+        ' — extrato x interno</p>',
+        unsafe_allow_html=True,
+    )
     available = _filtered_review_rows(potential)
     if len(available) == 0:
         st.markdown(
@@ -806,23 +843,6 @@ def undo_last_review() -> None:
     st.rerun()
 
 
-def render_sticky_bar(kpis: dict) -> None:
-    '''Render floating persistent indicators bar.'''
-    auto_text = format_pct(kpis.get('pct_auto', 0.0))
-    review_text = format_pct(kpis.get('pct_review', 0.0))
-    exception_text = format_pct(kpis.get('exception_rate', 0.0))
-    st.markdown(
-        '<div class="floating-sticky-bar">'
-        '<div class="sticky-metric"><div class="kpi-label">Conciliado</div>'
-        f'<div class="kpi-value">{auto_text}</div></div>'
-        '<div class="sticky-metric"><div class="kpi-label">Para revisão</div>'
-        f'<div class="kpi-value">{review_text}</div></div>'
-        '<div class="sticky-metric"><div class="kpi-label">Taxa de exceção</div>'
-        f'<div class="kpi-value">{exception_text}</div></div></div>',
-        unsafe_allow_html=True,
-    )
-
-
 def build_export_payloads() -> tuple:
     '''Build excel csv bytes in memory without files.'''
     results = st.session_state.get('results')
@@ -876,47 +896,40 @@ def render_download_buttons(excel_bytes: bytes, csv_bytes: bytes) -> None:
 
 
 def render_export_section() -> None:
-    '''Render download buttons plus sticky indicators.'''
+    '''Render centered download buttons for reports.'''
     results = st.session_state.get('results')
     if results is None:
         return
-    kpis = _export_kpis(results)
-    st.markdown('<h2 class="display-md">Exportar relatórios</h2>', unsafe_allow_html=True)
-    excel_bytes, csv_bytes = build_export_payloads()
-    render_download_buttons(excel_bytes, csv_bytes)
-    render_sticky_bar(kpis)
-
-
-def _export_kpis(results: dict) -> dict:
-    '''Calculate kpis for sticky export bar.'''
-    statement_frame = st.session_state.get('statement_df')
-    ledger_frame = st.session_state.get('ledger_df')
-    statement_count = 0 if statement_frame is None else len(statement_frame)
-    ledger_count = 0 if ledger_frame is None else len(ledger_frame)
-    return calc_kpis(results, statement_count, ledger_count)
-
-
-def render_footer() -> None:
-    '''Render parchment footer with version.'''
+    st.divider()
     st.markdown(
-        f'<div class="footer"><p>Conciliação Bancária · Versão {APP_VERSION}</p></div>',
+        '<h2 class="display-md export-center">Exportar relatórios</h2>', unsafe_allow_html=True
+    )
+    st.markdown(
+        '<p class="body-text export-center">Baixe o relatório completo e o CSV de exceções.</p>',
         unsafe_allow_html=True,
     )
+    excel_bytes, csv_bytes = build_export_payloads()
+    outer_left, outer_center, outer_right = st.columns([1, 2, 1])
+    with outer_center:
+        render_download_buttons(excel_bytes, csv_bytes)
 
 
 def main() -> None:
-    '''Run seven step reconciliation flow.'''
+    '''Run wide two column reconciliation flow.'''
+    st.set_page_config(page_title='Conciliação Bancária', layout='wide')
     init_state()
     load_styles()
     render_header()
-    render_upload_section()
-    render_params_section()
-    render_concile_button()
-    render_kpi_section()
-    render_results_section()
-    render_review_section()
+    st.divider()
+    left_panel, right_panel = st.columns([1, 1], gap='large')
+    with left_panel:
+        render_upload_section()
+        render_params_section()
+        render_concile_button()
+    with right_panel:
+        render_kpi_section()
+        render_results_section()
     render_export_section()
-    render_footer()
 
 
 if __name__ == '__main__':
