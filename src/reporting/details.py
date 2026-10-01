@@ -1,8 +1,45 @@
 '''Matched and single side detail rows.'''
 
+from src.guards import is_missing
 from src.reporting.formatting import _as_number
 from src.reporting.headers import _manual_label, _reason_label, _status_label
 from src.reporting.lookups import _extract_side
+
+
+def _display_pair_id(pair: object) -> str:
+    '''Return blank for missing pandas pair id.'''
+    if pair is None:
+        return ''
+    if is_missing(pair):
+        return ''
+    return pair
+
+
+def _display_rule_id(rule: object) -> str:
+    '''Return blank for missing pandas rule id.'''
+    if rule is None:
+        return ''
+    if is_missing(rule):
+        return ''
+    return rule
+
+
+def _display_reason_motive(reason: object) -> str:
+    '''Return blank or pt-BR motive for pandas reason.'''
+    if reason is None:
+        return ''
+    if is_missing(reason):
+        return ''
+    return _reason_label(reason)
+
+
+def _display_metric_number(metric: object) -> object:
+    '''Return blank for missing pandas metric number.'''
+    if metric is None:
+        return ''
+    if is_missing(metric):
+        return ''
+    return metric
 
 
 def _matched_rows(
@@ -34,7 +71,6 @@ def _build_detail_dict(
     label: str,
 ) -> dict:
     '''Build pt-BR detail dict from side and audit fields.'''
-    motive = '' if reason is None else _reason_label(reason)
     return {
         'Origem': origin, 'Data original': side['orig_date'],
         'Data normalizada': side['norm_date'],
@@ -43,12 +79,12 @@ def _build_detail_dict(
         'Valor normalizado': side['norm_value'],
         'Sinal': side['sign'],
         'Status': status,
-        'Par ID': pair if pair is not None else '',
-        'Diferença dias': day_diff,
+        'Par ID': _display_pair_id(pair),
+        'Diferença dias': _display_metric_number(day_diff),
         'Diferença valor': _as_number(value_diff),
-        'Score descrição': score,
-        'Regra ID': rule if rule is not None else '',
-        'Motivo': motive,
+        'Score descrição': _display_metric_number(score),
+        'Regra ID': _display_rule_id(rule),
+        'Motivo': _display_reason_motive(reason),
         'Ação manual': label,
     }
 
@@ -95,8 +131,10 @@ def _resolve_side_frame(item: object, statement_df: object, ledger_frame: object
         return (item.get('ledger_idx'), ledger_frame, 'Interno')
     if source == 'statement':
         return (item.get('statement_idx'), statement_df, 'Extrato')
-    if item.get('ledger_idx') is not None and source not in ('statement', 'ledger'):
-        return (item.get('ledger_idx'), ledger_frame, 'Interno')
+    ledger_idx = item.get('ledger_idx')
+    if ledger_idx is not None and not is_missing(ledger_idx):
+        if source not in ('statement', 'ledger'):
+            return (ledger_idx, ledger_frame, 'Interno')
     return (item.get('statement_idx'), statement_df, 'Extrato')
 
 
@@ -107,7 +145,10 @@ def _single_side_row(
     idx, frame, origin = _resolve_side_frame(item, statement_df, ledger_frame)
     side = _extract_side(frame, idx)
     pair = item.get('match_id')
-    manual_entry = manual.get(str(pair), {}) if pair is not None else {}
+    if pair is None or is_missing(pair):
+        manual_entry: dict = {}
+    else:
+        manual_entry = manual.get(str(pair), {})
     return _single_row_dict(item, side, origin, status, pair, manual_entry)
 
 

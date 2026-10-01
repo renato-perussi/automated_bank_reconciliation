@@ -1,17 +1,19 @@
 '''Single candidate status rules RN-01 RN-02 RN-04 RN-05 RN-06 RN-07 RN-08.'''
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
-from src.config import DATE_TOLERANCE_DAYS, FUZZY_THRESHOLD, VALUE_TOLERANCE
+from src.config import (
+    DATE_TOLERANCE_DAYS,
+    FUZZY_THRESHOLD,
+    LOW_DESCRIPTION_SCORE,
+    VALUE_TOLERANCE,
+)
 from src.logger import get_logger
 from src.params import params_snapshot as _shared_snapshot
 
 logger = get_logger(__name__)
 
-
-def _params_snapshot(params: dict) -> dict:
-    '''Build deterministic snapshot with app version.'''
-    return _shared_snapshot(params)
+_params_snapshot = _shared_snapshot
 
 
 def _as_decimal(value: object) -> Decimal:
@@ -52,7 +54,7 @@ def classify_match(
     try:
         diff_dec = _as_decimal(value_diff)
         tol_dec = _as_decimal(tolerance)
-    except Exception:
+    except (InvalidOperation, ValueError, TypeError, AttributeError):
         logger.warning('Valor inválido na classificação.')
         return {'status': 'pending', 'rule_id': 'RN-08', 'reason': 'valor_fora_tolerancia'}
     if diff_dec > tol_dec:
@@ -74,7 +76,7 @@ def _decide_value_fuzzy(diff_dec: Decimal, score: object, params: dict) -> dict:
 
 def _decide_cents(score: int, use_fuzzy: bool) -> dict:
     '''Classify value divergent inside tolerance.'''
-    if use_fuzzy and score < 60:
+    if use_fuzzy and score < LOW_DESCRIPTION_SCORE:
         return {'status': 'divergent', 'rule_id': 'RN-08', 'reason': 'divergencia_valor_descricao'}
     return {'status': 'potential', 'rule_id': 'RN-08', 'reason': 'divergencia_centavos'}
 
@@ -85,6 +87,6 @@ def _decide_exact(score: int, use_fuzzy: bool, threshold: int) -> dict:
         return {'status': 'auto', 'rule_id': 'RN-06', 'reason': 'regra_composta_ok'}
     if score >= threshold:
         return {'status': 'auto', 'rule_id': 'RN-06', 'reason': 'regra_composta_ok'}
-    if score >= 60:
+    if score >= LOW_DESCRIPTION_SCORE:
         return {'status': 'potential', 'rule_id': 'RN-05', 'reason': 'descricao_baixa_similaridade'}
     return {'status': 'divergent', 'rule_id': 'RN-05', 'reason': 'descricao_divergente'}

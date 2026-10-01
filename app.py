@@ -16,7 +16,13 @@ from src.review_state import confirm_pair_state, reject_pair_state, undo_last_re
 from src.review_state import history_display as _history_frame
 from src.review_state import history_label as _history_name
 from src.review_state import history_moment as _history_time
-from ui.components import load_styles, render_header
+from ui.components import (
+    load_styles,
+    render_footer,
+    render_global_nav,
+    render_header,
+    render_subnav,
+)
 from ui.sections.export_section import render_export_section
 from ui.sections.params_section import render_concile_button, render_params_section
 from ui.sections.results import render_kpi_section, render_results_section
@@ -165,25 +171,24 @@ def build_export_payloads() -> tuple:
 
 
 def main() -> None:
-    '''Run wide two column reconciliation flow.'''
+    '''Run vertical funnel with full width results.'''
     st.set_page_config(
-        page_title='Conciliação Bancária', layout='wide', page_icon=':material/account_balance:'
+        page_title='Conciliação Bancária', layout='centered', page_icon=':material/account_balance:'
     )
     init_state()
     load_styles()
+    render_global_nav()
     render_header()
-    st.divider()
-    left_panel, right_panel = st.columns([1, 1], gap='large')
-    with left_panel:
-        render_upload_section()
-        render_params_section()
-        render_concile_button()
-    with right_panel:
-        render_kpi_section()
-        render_results_section()
+    render_subnav()
+    render_upload_section()
+    render_params_section()
+    render_concile_button()
+    render_kpi_section()
+    render_results_section()
     results = st.session_state.get('results')
     excel_bytes, csv_bytes = build_export_payloads() if results is not None else (b'', b'')
     render_export_section(results, excel_bytes, csv_bytes)
+    render_footer()
 
 
 if __name__ == '__main__':

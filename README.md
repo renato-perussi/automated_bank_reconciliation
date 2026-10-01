@@ -139,14 +139,19 @@ Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 - `app.py`: tela fina (190 linhas) que só monta os painéis e chama as seções.
 - `src/`: motor e serviços (leitura, normalização, comparação, classificação e relatórios). Fachadas finas com a lógica em pacotes:
-  - `src/reporting/`: relatórios (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`).
+  - `src/display.py`: textos, datas e valores para tela e relatório.
+  - `src/normalization/` + `src/normalize.py`: datas, valores, sinais, descrições e tabelas.
+  - `src/filtering/` + `src/filters.py`: texto, valor, período e contadores (`result_filters.py` usa na tela).
+  - `src/review/` + `src/review_state.py`: confirmação, desfazer e histórico da revisão manual.
+  - `src/reporting/`: relatórios (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`).
   - `src/classification/`: classificação (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`).
   - `src/filters.py`, `src/review_state.py`, `src/export_service.py`: filtros de tela, estado da revisão manual e bytes de exportação.
   - `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py`: bases compartilhadas sem duplicação.
 - `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas).
-- `ui/sections/`: seções da tela (`upload`, `params_section`, `results`, `review`, `history`, `export_section`).
+- `ui/sections/`: seções da tela (`upload`, `params_section`, `results`, `result_filters`, `review`, `history`, `export_section`).
+- `ui/components/`: base, navegação, KPIs, tabelas e cartões de revisão.
 - `scripts/`: apoio como `bench.py` para medir 5000 x 5000 em menos de 30 segundos.
-- `tests/`: 201 testes verdes, cobertura 93% (`test_filters.py`, `test_review_state.py`, `test_export_service.py`, `test_reporting_split.py`, `test_classification_split.py` além dos testes S0–S4).
+- `tests/`: 207 testes verdes, cobertura 90% (`test_filters.py`, `test_review_state.py`, `test_export_service.py`, `test_reporting_split.py`, `test_classification_split.py` além dos testes S0–S4).
 - `tests/fixtures/`: arquivos pequenos de exemplo para testes, incluindo a pasta `matrix/` com variações.
 - `data/examples/`: cópia dos exemplos para você testar à mão.
 - `data/output/`: onde saem os relatórios se você salvar à mão (esta pasta é ignorada no git).

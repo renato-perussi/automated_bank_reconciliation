@@ -1,36 +1,12 @@
 '''Side extraction for detail rows.'''
 
-import pandas as pd
-
+from src.display import lookup_value as _shared_lookup
 from src.reporting.formatting import _as_number, _as_text, _format_iso
 
 
 def _lookup_field(frame: object, idx: object, fields: list) -> object:
     '''Return first available field value for index.'''
-    if frame is None or idx is None:
-        return None
-    try:
-        if len(frame) == 0 or idx not in frame.index:
-            return None
-        row = frame.loc[idx]
-    except (KeyError, ValueError, TypeError):
-        return None
-    for field in fields:
-        try:
-            if field not in frame.columns:
-                continue
-            found = row[field]
-        except (KeyError, ValueError):
-            continue
-        if found is None:
-            continue
-        try:
-            if pd.isna(found):
-                continue
-        except (ValueError, TypeError):
-            pass
-        return found
-    return None
+    return _shared_lookup(frame, idx, fields)
 
 
 def _extract_side(frame: object, idx: object) -> dict:

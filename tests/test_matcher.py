@@ -60,6 +60,14 @@ def test_build_params_tolerance_types() -> None:
     assert build_params(value_tolerance='0.05')['value_tolerance'] == Decimal('0.05')
 
 
+def test_build_params_tolerance_without_upper_cap() -> None:
+    '''Value tolerance above ten is accepted without ceiling.'''
+    assert build_params(value_tolerance=Decimal('150.00'))['value_tolerance'] == Decimal('150.00')
+    assert build_params(value_tolerance=Decimal('1000000'))['value_tolerance'] == Decimal(
+        '1000000'
+    )
+
+
 def test_build_params_invalid_date() -> None:
     '''Day tolerance outside zero thirty raises pt-BR.'''
     with pytest.raises(ValueError, match='Tolerância de dias'):

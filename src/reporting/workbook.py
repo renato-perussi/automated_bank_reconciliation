@@ -1,13 +1,13 @@
 '''Workbook sheets with pt-BR headers.'''
 
-import io
-
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from src.guards import is_missing
 from src.logger import get_logger
 from src.reporting.details import _collect_all_detail
+from src.reporting.determinism import _new_deterministic_workbook, _save_deterministic_bytes
 from src.reporting.errors import _normalize_error_frames
 from src.reporting.formatting import _as_number
 from src.reporting.headers import (
@@ -21,63 +21,23 @@ from src.reporting.headers import (
 from src.reporting.kpis import _safe_len, calc_kpis
 from src.reporting.rule_log import build_rule_log
 from src.reporting.snapshots import _params_snapshot, _snapshot_text
+from src.reporting.summary import (
+    _kpi_labels,
+    _param_rows,
+    _write_kpi_block,
+    _write_param_block,
+    _write_resumo,
+)
 
 logger = get_logger(__name__)
 
-
-def _kpi_labels(kpis: dict) -> list:
-    '''Build pt-BR kpi label value pairs.'''
-    return [
-        ('Total extrato', kpis.get('total_statement', 0)),
-        ('Total interno', kpis.get('total_ledger', 0)),
-        ('% Conciliado', kpis.get('pct_auto', 0.0)),
-        ('% Para revisão', kpis.get('pct_review', 0.0)),
-        ('% Pendente', kpis.get('pct_pending', 0.0)),
-        ('% Divergente', kpis.get('pct_divergent', 0.0)),
-        ('Taxa de exceção', kpis.get('exception_rate', 0.0)),
-    ]
-
-
-def _param_rows(snapshot: dict) -> list:
-    '''Build snapshot key value pairs.'''
-    version = snapshot.get('APP_VERSION', snapshot.get('app_version'))
-    return [
-        ('date_tolerance_days', snapshot.get('date_tolerance_days')),
-        ('fuzzy_threshold', snapshot.get('fuzzy_threshold')),
-        ('value_tolerance', str(snapshot.get('value_tolerance'))),
-        ('APP_VERSION', version),
-    ]
-
-
-def _write_resumo(sheet: object, kpis: dict, snapshot: dict) -> None:
-    '''Write kpi and snapshot blocks into resumo sheet.'''
-    sheet['A1'] = 'Resumo da conciliação'
-    sheet['A1'].font = Font(bold=True, size=14)
-    sheet['A3'] = 'Indicador'
-    sheet['B3'] = 'Valor'
-    row_no = _write_kpi_block(sheet, kpis, 4)
-    _write_param_block(sheet, snapshot, row_no)
-
-
-def _write_kpi_block(sheet: object, kpis: dict, start: int) -> int:
-    '''Write kpi rows returning next free row.'''
-    row_no = int(start)
-    for label, value in _kpi_labels(kpis):
-        sheet.cell(row=row_no, column=1, value=label)
-        sheet.cell(row=row_no, column=2, value=value)
-        row_no = row_no + 1
-    return row_no
-
-
-def _write_param_block(sheet: object, snapshot: dict, row_no: int) -> None:
-    '''Write snapshot rows after kpi block.'''
-    sheet.cell(row=row_no + 1, column=1, value='Parâmetro')
-    sheet.cell(row=row_no + 1, column=2, value='Valor')
-    line = row_no + 2
-    for key, value in _param_rows(snapshot):
-        sheet.cell(row=line, column=1, value=key)
-        sheet.cell(row=line, column=2, value=value)
-        line = line + 1
+__all__ = [
+    '_kpi_labels',
+    '_param_rows',
+    '_write_kpi_block',
+    '_write_param_block',
+    '_write_resumo',
+]
 
 
 def _write_detail(book: Workbook, title: str, rows: list) -> None:
@@ -127,6 +87,24 @@ def _write_log(book: Workbook, log_frame: pd.DataFrame, snapshot: dict) -> None:
     sheet.freeze_panes = 'A2'
 
 
+def _blank_log_text(raw: object) -> str:
+    '''Return blank for missing pandas log text.'''
+    if raw is None:
+        return ''
+    if is_missing(raw):
+        return ''
+    return raw
+
+
+def _blank_log_metric(raw: object) -> object:
+    '''Return blank for missing pandas log metric.'''
+    if raw is None:
+        return ''
+    if is_missing(raw):
+        return ''
+    return raw
+
+
 def _log_display_values(item: object, text: str) -> dict:
     '''Map internal log row to pt-BR display values.'''
     snapshot = item.get('params_snapshot')
@@ -135,17 +113,20 @@ def _log_display_values(item: object, text: str) -> dict:
     else:
         detail = text
     reason = item.get('reason')
-    motive = '' if reason is None else _reason_label(reason)
+    if reason is None or is_missing(reason):
+        motive = ''
+    else:
+        motive = _reason_label(reason)
     return {
-        'Par ID': item.get('match_id') if item.get('match_id') is not None else '',
-        'Regra ID': item.get('rule_id') if item.get('rule_id') is not None else '',
-        'Diferença dias': item.get('day_diff'),
+        'Par ID': _blank_log_text(item.get('match_id')),
+        'Regra ID': _blank_log_text(item.get('rule_id')),
+        'Diferença dias': _blank_log_metric(item.get('day_diff')),
         'Diferença valor': _as_number(item.get('value_diff')),
-        'Score descrição': item.get('description_score'),
+        'Score descrição': _blank_log_metric(item.get('description_score')),
         'Motivo': motive,
-        'Código erro': item.get('error_code') if item.get('error_code') is not None else '',
+        'Código erro': _blank_log_text(item.get('error_code')),
         'Ação manual': _manual_label(item.get('review_action', '')),
-        'Data/Hora ação': item.get('timestamp') if item.get('timestamp') is not None else '',
+        'Data/Hora ação': _blank_log_text(item.get('timestamp')),
         'Parâmetros': detail,
     }
 
@@ -175,7 +156,7 @@ def build_conciliation_workbook(
     manual = _manual_lookup(review_log)
     detail = _collect_all_detail(results, statement_df, ledger_frame, manual)
     log_frame = build_rule_log(results, review_log, error_frames)
-    book = Workbook()
+    book = _new_deterministic_workbook()
     book.remove(book.active)
     resumo = book.create_sheet(title='Resumo')
     _write_resumo(resumo, kpis, snapshot)
@@ -183,6 +164,4 @@ def build_conciliation_workbook(
     _write_errors(book, error_frames)
     _write_log(book, log_frame, snapshot)
     logger.info('Built conciliation workbook with snapshot version.')
-    buffer = io.BytesIO()
-    book.save(buffer)
-    return buffer.getvalue()
+    return _save_deterministic_bytes(book)

@@ -113,6 +113,22 @@ def test_parse_filter_date_variants() -> None:
     assert parse_filter_date(float('nan')) is None
 
 
+def test_parse_filter_date_iso_small_day_no_swap() -> None:
+    '''ISO date keeps month day order despite dayfirst.'''
+    from src.filters import parse_filter_date
+    assert parse_filter_date('2026-10-05') == date(2026, 10, 5)
+    assert parse_filter_date('2026-10-02') == date(2026, 10, 2)
+    assert parse_filter_date('10/09/2026') == date(2026, 9, 10)
+
+
+def test_filter_by_period_keeps_iso_october_rows() -> None:
+    '''October ISO rows stay visible inside october window.'''
+    from src.filters import filter_by_period
+    frame = pd.DataFrame([{'Data': '2026-10-05'}, {'Data': '2026-09-30'}])
+    found = filter_by_period(frame, date(2026, 10, 1), date(2026, 10, 31))
+    assert found['Data'].tolist() == ['2026-10-05']
+
+
 def test_normalize_period_variants() -> None:
     '''None empty single date object normalize.'''
     from src.filters import normalize_period
@@ -137,6 +153,16 @@ def test_filter_by_period_edges() -> None:
     assert len(filter_by_period(other, start, start)) == 1
 
 
+def test_filter_by_period_keeps_unparseable_dates() -> None:
+    '''Rows without readable date stay visible under period.'''
+    from src.filters import filter_by_period
+    frame = pd.DataFrame([{'Data': 'nonsense-xyz'}, {'Data': '10/09/2026'}])
+    start = date(2026, 9, 9)
+    end = date(2026, 9, 11)
+    found = filter_by_period(frame, start, end)
+    assert len(found) == 2
+
+
 def test_value_pending_bounds_edges() -> None:
     '''None empty no values combined bounds.'''
     from src.filters import pending_bounds, value_bounds
@@ -156,3 +182,17 @@ def test_safe_ratio_valid() -> None:
     from src.filters import safe_ratio
     assert safe_ratio(50.0) == 0.5
     assert safe_ratio(0) == 0.0
+
+
+def test_format_match_counter_slash_style() -> None:
+    '''Single counter uses slash totals.'''
+    from src.filters import format_match_counter
+    assert format_match_counter(1, 1) == 'Mostrando 1/1'
+    assert format_match_counter(0, 1) == 'Mostrando 0/1'
+
+
+def test_format_pending_counter_slash_style() -> None:
+    '''Pending counter uses slash totals with e.'''
+    from src.filters import format_pending_counter
+    assert format_pending_counter(34, 47, 34, 47) == 'Mostrando 34/34 e 47/47'
+    assert format_pending_counter(0, 0, 0, 0) == 'Mostrando 0/0 e 0/0'

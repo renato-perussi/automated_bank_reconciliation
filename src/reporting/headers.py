@@ -41,22 +41,10 @@ _ERROR_HEADERS_PT = ('Linha', 'Motivo', 'Como corrigir')
 
 _STATUS_PT = dict(_shared_status_map)
 
+_manual_lookup = _shared_manual_lookup
 
-def _manual_lookup(review_log: object) -> dict:
-    '''Index manual decisions by match id keeping last.'''
-    return _shared_manual_lookup(review_log)
+_manual_label = _shared_manual_label
 
+_status_label = _shared_status_label
 
-def _manual_label(action: object) -> str:
-    '''Translate review action to pt-BR label.'''
-    return _shared_manual_label(action)
-
-
-def _status_label(category: str) -> str:
-    '''Map internal category to pt-BR status.'''
-    return _shared_status_label(category)
-
-
-def _reason_label(raw: object) -> str:
-    '''Translate internal motive code to pt-BR text.'''
-    return _shared_reason_label(raw)
+_reason_label = _shared_reason_label

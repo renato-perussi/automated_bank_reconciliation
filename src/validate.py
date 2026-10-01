@@ -1,5 +1,7 @@
 '''Row level validation splitting valid and error tables.'''
 
+from decimal import InvalidOperation
+
 import pandas as pd
 
 from src.logger import get_logger
@@ -25,7 +27,7 @@ def collect_errors(frame: pd.DataFrame) -> tuple:
                 )
             else:
                 valid_keys.append(idx)
-        except Exception as exc:
+        except (ValueError, TypeError, AttributeError, InvalidOperation, KeyError) as exc:
             logger.warning(f'Error collection failed with {exc}')
             continue
     valid = frame.loc[valid_keys].copy() if valid_keys else frame.iloc[0:0].copy()

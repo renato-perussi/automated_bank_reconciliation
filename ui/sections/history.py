@@ -14,6 +14,6 @@ def render_history() -> None:
     st.markdown('<p class="body-text">Histórico de revisão</p>', unsafe_allow_html=True)
     display = history_display(list(log_items))
     st.dataframe(display, hide_index=True, column_config=build_column_config(display))
-    if st.button('Desfazer última ação', key='undo_review', type='primary'):
+    if st.button('Desfazer última ação', key='undo_review', type='secondary'):
         undo_last_review_state(st.session_state)
         st.rerun()

@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+from src.config import DUPLICATE_DESCRIPTION_SCORE
 from src.matcher import find_candidates
 
 _MATCH_COLUMNS = [
@@ -32,7 +33,7 @@ def detect_duplicates(frame: pd.DataFrame, params: dict) -> set:
         score = item.get('description_score', 0)
         if score is None:
             score = 0
-        if int(score) >= 95:
+        if int(score) >= DUPLICATE_DESCRIPTION_SCORE:
             found.add(first)
             found.add(second)
     return found

@@ -24,9 +24,6 @@ from src.classification.pending import (
     _pending_row,
     _pending_rows,
     _pending_side,
-    _pick_amount,
-    _pick_date,
-    _pick_sign,
     _resolve_pending_limits,
 )
 from src.classification.rules import (
@@ -79,10 +76,7 @@ __all__ = [
     '_pending_row',
     '_pending_rows',
     '_pending_side',
-    '_pick_amount',
     '_pick_best',
-    '_pick_date',
-    '_pick_sign',
     '_resolve_pending_limits',
     '_sort_key',
     'STATUS_LABEL_PT',

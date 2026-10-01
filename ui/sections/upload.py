@@ -66,17 +66,29 @@ def _default_index(options: list, wished: object) -> int:
         return 0
 
 
+def _mapping_complete(raw_frame: pd.DataFrame) -> bool:
+    '''Check auto mapping found all columns.'''
+    auto_map = auto_map_columns(raw_frame)
+    return all(auto_map.get(key) is not None for key in ('data', 'descricao', 'valor'))
+
+
 def choose_mapping(raw_frame: pd.DataFrame, prefix: str) -> dict:
-    '''Collect column choices with auto mapped defaults.'''
+    '''Collect column choices inside collapsible mapper.'''
     options = get_mapping_options(raw_frame)
     auto_map = auto_map_columns(raw_frame)
     date_default = _default_index(options, auto_map.get('data'))
     desc_default = _default_index(options, auto_map.get('descricao'))
     value_default = _default_index(options, auto_map.get('valor'))
-    date_choice = st.selectbox('Data', options, index=date_default, key=f'{prefix}_date')
-    desc_choice = st.selectbox('Descrição', options, index=desc_default, key=f'{prefix}_desc')
-    value_choice = st.selectbox('Valor', options, index=value_default, key=f'{prefix}_value')
-    return {'data': date_choice, 'descricao': desc_choice, 'valor': value_choice}
+    collapsed = _mapping_complete(raw_frame)
+    label = 'Mapear colunas (auto detectado)' if collapsed else 'Mapear colunas'
+    box = st.expander(label, expanded=not collapsed, icon=':material/tune:')
+    with box:
+        date_choice = st.selectbox('Data', options, index=date_default, key=f'{prefix}_date')
+        desc_choice = st.selectbox(
+            'Descrição', options, index=desc_default, key=f'{prefix}_desc'
+        )
+        value_choice = st.selectbox('Valor', options, index=value_default, key=f'{prefix}_value')
+        return {'data': date_choice, 'descricao': desc_choice, 'valor': value_choice}
 
 
 def finalize_source(raw_frame: pd.DataFrame, mapping: dict, source: str) -> tuple:
@@ -104,12 +116,24 @@ def format_error_display(frame: pd.DataFrame) -> pd.DataFrame:
     return _clean_error_frame(frame)
 
 
+def _render_source_status(valid: pd.DataFrame, errors: pd.DataFrame) -> None:
+    '''Show valid error badges after mapping.'''
+    total_valid = 0 if valid is None else len(valid)
+    total_errors = 0 if errors is None else len(errors)
+    if total_errors == 0:
+        st.badge(f'{total_valid} válidas', icon=':material/check:', color='green')
+        return
+    st.badge(f'{total_valid} válidas', icon=':material/check:', color='green')
+    st.badge(f'{total_errors} com erro', icon=':material/warning:', color='orange')
+
+
 def show_preview_errors(
     raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str
 ) -> None:
     '''Show five row preview plus pt-BR error table.'''
+    has_errors = error_frame is not None and len(error_frame) > 0
     box = st.expander(
-        'Prévia e erros', expanded=False, icon=':material/preview:', on_change='rerun',
+        'Prévia e erros', expanded=has_errors, icon=':material/preview:', on_change='rerun',
         key=f'{prefix}_preview',
     )
     if box.open is False:
@@ -117,10 +141,12 @@ def show_preview_errors(
     with box:
         st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
         st.dataframe(get_preview(raw_frame, 5), hide_index=True)
-        if error_frame is not None and len(error_frame) > 0:
+        if has_errors:
             st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
             display = format_error_display(error_frame)
             st.dataframe(display, hide_index=True, column_config=build_column_config(display))
+        else:
+            st.caption('Sem erros. Colunas esperadas: Data, Descrição, Valor.')
 
 
 def render_single_upload(
@@ -133,6 +159,7 @@ def render_single_upload(
         unsafe_allow_html=True,
     )
     if uploaded is None:
+        st.caption('Exemplo: Data, Descrição, Valor • 10/09/2026, Fornecedor X, -2500')
         return
     raw_frame = fetch_raw_table(uploaded)
     if raw_frame is None:
@@ -141,12 +168,13 @@ def render_single_upload(
     valid, errors = finalize_source(raw_frame, mapping, source)
     st.session_state[frame_key] = valid
     st.session_state[error_key] = errors
+    _render_source_status(valid, errors)
     show_preview_errors(raw_frame, errors, prefix)
 
 
 def render_upload_section() -> None:
     '''Render title plus two upload cards side by side.'''
-    st.markdown('<h2 class="display-md">Upload dos arquivos</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="display-md">1. Upload dos arquivos</h2>', unsafe_allow_html=True)
     st.markdown(
         '<p class="body-text">Envie o extrato e os lançamentos internos em CSV ou Excel.</p>',
         unsafe_allow_html=True,

@@ -1,6 +1,6 @@
 '''Shared engine params validation and snapshot.'''
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from src.config import APP_VERSION, DATE_TOLERANCE_DAYS, FUZZY_THRESHOLD, VALUE_TOLERANCE
 from src.money import ensure_value_tolerance
@@ -51,15 +51,20 @@ def ensure_use_fuzzy(value: object) -> None:
         raise ValueError('Usar similaridade deve ser verdadeiro ou falso.')
 
 
+def _clean_snapshot_tolerance(value: object) -> Decimal:
+    '''Convert snapshot tolerance with fallback default.'''
+    if isinstance(value, Decimal):
+        return value
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError, AttributeError):
+        return VALUE_TOLERANCE
+
+
 def params_snapshot(params: object) -> dict:
     '''Build deterministic snapshot with app version.'''
     base = {} if not isinstance(params, dict) else dict(params)
-    tolerance = base.get('value_tolerance', VALUE_TOLERANCE)
-    if not isinstance(tolerance, Decimal):
-        try:
-            tolerance = Decimal(str(tolerance))
-        except Exception:
-            tolerance = VALUE_TOLERANCE
+    tolerance = _clean_snapshot_tolerance(base.get('value_tolerance', VALUE_TOLERANCE))
     version = base.get('APP_VERSION', base.get('app_version', APP_VERSION))
     return {
         'date_tolerance_days': base.get('date_tolerance_days', DATE_TOLERANCE_DAYS),

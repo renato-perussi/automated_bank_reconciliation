@@ -3,9 +3,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0 |
-| Data | 29/09/2026 |
-| Status | Aprovado para implementação (MVP) |
+| Versão | 1.1 |
+| Data | 01/10/2026 |
+| Status | Aprovado (MVP) + adendo S5/S6 sem mudança de regra |
 | Idioma | pt-BR |
 | Origem | `Conciliação_Bancária_Automatizada.md` + `DESIGN.md` |
 | Formato de saída | Markdown pronto para `PRD.md` |
@@ -141,7 +141,7 @@ A conciliação manual entre sistema interno (ERP/planilha) e extrato bancário 
 3. Etapa 2 — Mapeamento: confirma qual coluna é `Data`, `Descrição`, `Valor`. Default tenta auto-detecção por nome (`data`, `date`, `descricao`, `descrição`, `historico`, `valor`, `amount`).
 4. Etapa 3 — Parâmetros: ajusta `tolerancia_dias` (default 2), `threshold_fuzzy` (default 85), `tolerancia_valor` (default 0.00, configurável ex.: 0.05).
 5. Etapa 4 — Execução: clica em `Conciliar`. Sistema executa normalização + matching + classificação.
-6. Etapa 5 — Resultado: vê KPIs no topo + 4 abas/tabelas: Conciliadas, Para Revisão, Pendentes, Divergentes/Erros.
+6. Etapa 5 — Resultado: vê KPIs no topo + 6 abas/tabelas: Conciliadas, Para Revisão, Pendentes, Divergentes, Duplicadas, Erros.
 7. Etapa 6 — Revisão: em `Para Revisão`, seleciona par sugerido, vê score e regra, confirma ou rejeita. Rejeição devolve para pendente.
 8. Etapa 7 — Exportação: exporta `relatorio_conciliacao.xlsx` + `relatorio_excecoes.csv` com log de regra.
 
@@ -206,7 +206,7 @@ flowchart TD
 
 | ID | Requisito | Prioridade | Critérios de Aceite |
 |---|---|---|---|
-| RF-017 | Listar lançamentos sem correspondência dos dois lados | Must | Duas tabelas: `extrato sem par` e `interno sem par`; filtros por período, valor, texto |
+| RF-017 | Listar lançamentos sem correspondência dos dois lados | Must | Duas tabelas: `extrato sem par` e `interno sem par`; filtros por período, valor, texto; filtro por período nunca oculta linha sem data legível; filtro por valor entende `R$ 2.500,00` |
 | RF-018 | Tela de revisão lado a lado com confirmação manual | Must | Exibe par + diff dias + diff valor + score + regra; ações `Confirmar` / `Rejeitar`; confirmação move para conciliada_manual com log |
 | RF-019 | Gerar relatório de conciliação exportável CSV + Excel | Must | Exporta classificações + normalizadas + regra + score; Excel com abas por status |
 | RF-020 | Gerar relatório de exceções | Must | Contém apenas `potencial`, `pendente`, `divergente`, `duplicada`, `erro`; mostra contagem e % por categoria |
@@ -366,7 +366,7 @@ Data,Descrição,Valor
 | T-02 Upload | Dois uploaders + mapeamento colunas + preview 5 linhas | `{component.store-utility-card}`, `{rounded.lg}`, `{component.button-primary}` `{rounded.pill}` |
 | T-03 Parâmetros | `tolerancia_dias` 0–30 default 2, `threshold_fuzzy` 0–100 default 85, `tolerancia_valor` default 0.00 | `{component.configurator-option-chip}`, `{component.search-input}` |
 | T-04 KPIs | 5 cards: Total extrato, Total interno, % Auto, % Revisão, % Pendente/Divergente | `{component.store-utility-card}` sem sombra, `{colors.surface-pearl}` |
-| T-05 Resultados | Abas `Conciliadas` / `Para Revisão` / `Pendente` / `Divergentes` / `Erros` + filtros | `{component.product-tile-light}`, `{component.text-link}` `{colors.primary}` |
+| T-05 Resultados | Abas `Conciliadas` / `Para Revisão` / `Pendentes` / `Divergentes` / `Duplicadas` / `Erros` + filtros | `{component.product-tile-light}`, `{component.text-link}` `{colors.primary}` |
 | T-06 Revisão | Lado a lado extrato x interno + diff + score + regra + Confirmar/Rejeitar | `{component.button-primary}` Confirmar; `{component.button-secondary-pill}` Rejeitar; touch 44x44 |
 | T-07 Exportação | Downloads CSV/Excel + `floating-sticky-bar` com KPIs | `{component.floating-sticky-bar}`, `{component.button-pearl-capsule}`, `{component.footer}` |
 | T-08 Erros | Tabela erros + motivo + orientação | `{colors.ink-muted-48}`, `{typography.caption}` |
@@ -386,7 +386,7 @@ Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KP
 | % Divergente + Duplicada | `(divergente+duplicada) / total_unificado` | % + barra |
 | Taxa de exceção | `1 - % conciliado_auto` | destaque principal |
 
-- **`relatorio_conciliacao.xlsx`:** abas `Resumo`, `Conciliadas`, `Para_Revisao`, `Pendentes`, `Divergentes`, `Erros`, `Log_Regras`.
+- **`relatorio_conciliacao.xlsx`:** abas `Resumo`, `Conciliadas`, `Para_Revisao`, `Pendentes`, `Divergentes`, `Duplicadas`, `Erros`, `Log_Regras`.
 - **`relatorio_excecoes.csv`:** só não conciliados, ordenado por `valor_norm desc`.
 - Ambos incluem snapshot de parâmetros e versão do motor.
 
@@ -459,15 +459,19 @@ automated_bank_reconciliation/
 ├── PRD.md
 ├── DESIGN.md
 ├── src/
-│   ├── __init__.py
+│   ├── display.py
 │   ├── loader.py
-│   ├── normalize.py
+│   ├── mapping.py
+│   ├── normalize.py + normalization/
 │   ├── matcher.py
-│   ├── classifier.py
-│   ├── report.py
+│   ├── classifier.py + classification/
+│   ├── report.py + reporting/
+│   ├── filters.py + filtering/
+│   ├── review_state.py + review/
 │   └── config.py
 ├── ui/
-│   ├── components.py
+│   ├── components/
+│   ├── sections/ (inclui result_filters.py)
 │   └── styles.css
 ├── tests/
 │   ├── test_normalize.py

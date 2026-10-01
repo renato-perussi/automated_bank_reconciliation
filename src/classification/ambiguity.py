@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from src.classification.rules import _as_decimal
+from src.config import MISSING_DAY_FALLBACK
 
 
 def _group_by(candidates: list, field: str) -> dict:
@@ -18,7 +19,7 @@ def _sort_key(item: dict) -> tuple:
     '''Build deterministic tie breaker for ambiguity.'''
     day = item.get('day_diff')
     if day is None:
-        day = 9999
+        day = MISSING_DAY_FALLBACK
     score = item.get('description_score')
     if score is None:
         score = 0

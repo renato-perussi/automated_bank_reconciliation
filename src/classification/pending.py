@@ -1,17 +1,14 @@
 '''Pending rows with signal blocked check.'''
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 
 from src.classification.duplicates import _MATCH_COLUMNS, _empty_frame
 from src.config import DATE_TOLERANCE_DAYS, VALUE_TOLERANCE
-from src.entries import build_amount_index as _shared_amount_index
+from src.entries import build_amount_index as _build_amount_index
 from src.entries import collect_entries as _shared_collect
-from src.entries import is_signal_blocked as _shared_signal_blocked
-from src.entries import resolve_amount as _shared_resolve_amount
-from src.entries import resolve_entry_date as _shared_resolve_date
-from src.entries import resolve_entry_sign as _shared_resolve_sign
+from src.entries import is_signal_blocked as _is_signal_blocked
 from src.money import ensure_value_tolerance as _shared_ensure_tolerance
 
 
@@ -29,33 +26,6 @@ def _collect_simple_entries(frame: pd.DataFrame) -> list:
     ]
 
 
-def _pick_amount(row: pd.Series) -> object:
-    '''Pick first available normalized amount.'''
-    return _shared_resolve_amount(row)
-
-
-def _pick_date(row: pd.Series) -> object:
-    '''Pick normalized date when present.'''
-    return _shared_resolve_date(row)
-
-
-def _pick_sign(row: pd.Series) -> object:
-    '''Pick integer sign when present.'''
-    return _shared_resolve_sign(row)
-
-
-def _build_amount_index(entries: list) -> tuple:
-    '''Build sorted absolute amount index for signal check.'''
-    return _shared_amount_index(entries)
-
-
-def _is_signal_blocked(
-    target: dict, amounts: list, ordered: list, tolerance: Decimal, limit: int
-) -> bool:
-    '''Check opposite sign inside absolute amount date window.'''
-    return _shared_signal_blocked(target, amounts, ordered, tolerance, limit)
-
-
 def _resolve_pending_limits(params: dict) -> tuple:
     '''Resolve tolerance and date limit for pending checks.'''
     tolerance = params.get('value_tolerance', VALUE_TOLERANCE)
@@ -63,8 +33,8 @@ def _resolve_pending_limits(params: dict) -> tuple:
     if not isinstance(tolerance, Decimal):
         try:
             tolerance = _shared_ensure_tolerance(tolerance)
-        except ValueError:
-            tolerance = Decimal(str(tolerance))
+        except (ValueError, InvalidOperation, TypeError, AttributeError):
+            tolerance = VALUE_TOLERANCE
     return (tolerance, limit)
 
 

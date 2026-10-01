@@ -1,5 +1,6 @@
-'''Shared Decimal money helpers without float.'''
+'''Shared Decimal engine money helpers with display float isolates.'''
 
+import re
 from decimal import Decimal, InvalidOperation
 
 from src.guards import is_missing
@@ -46,7 +47,7 @@ def ensure_value_tolerance(value: object) -> Decimal:
 
 
 def as_number(value: object) -> object:
-    '''Convert Decimal numeric to float preserving none.'''
+    '''Convert Decimal engine value to display float preserving none.'''
     if value is None:
         return None
     if is_missing(value):
@@ -60,7 +61,7 @@ def as_number(value: object) -> object:
 
 
 def format_brl(raw_value: object) -> str:
-    '''Format numeric input as pt-BR currency text.'''
+    '''Format numeric input as pt-BR currency display text.'''
     if raw_value is None:
         return '—'
     if is_missing(raw_value):
@@ -73,3 +74,54 @@ def format_brl(raw_value: object) -> str:
     text = f'{quantized:,.2f}'
     text = text.replace(',', 'X').replace('.', ',').replace('X', '.')
     return f'R$ {text}'
+
+
+def normalize_decimal_marks(core: str) -> str:
+    '''Normalize thousand and decimal marks to plain dot form.'''
+    if ',' in core:
+        return core.replace('.', '').replace(',', '.')
+    if re.match(r'^\d{1,3}(\.\d{3})+$', core):
+        return core.replace('.', '')
+    return core
+
+
+def clean_brl_text(raw: object) -> str:
+    '''Normalize pt-BR money display text to plain number text.'''
+    text = str(raw).strip()
+    negative = False
+    if text.startswith('(') and text.endswith(')'):
+        negative = True
+        text = text[1:-1].strip()
+    clean = text.replace('R$', '').replace('r$', '').strip()
+    if clean.startswith('-'):
+        negative = True
+        clean = clean[1:].strip()
+    if clean.startswith('+'):
+        clean = clean[1:].strip()
+    clean = clean.replace(' ', '')
+    clean = normalize_decimal_marks(clean)
+    if negative and not clean.startswith('-'):
+        clean = f'-{clean}'
+    return clean
+
+
+def parse_display_number(raw: object) -> float | None:
+    '''Parse pt-BR display value to display float for filters.'''
+    if raw is None:
+        return None
+    try:
+        if is_missing(raw):
+            return None
+    except (ValueError, TypeError):
+        pass
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, (int, float)):
+        return float(raw)
+    text = str(raw).strip()
+    if text == '' or text == '—':
+        return None
+    try:
+        return float(clean_brl_text(text))
+    except (ValueError, TypeError):
+        return None
