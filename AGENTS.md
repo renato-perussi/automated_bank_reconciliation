@@ -14,7 +14,7 @@
 - `src/mapping.py`: `normalize_header` strips accent/case; internals `event_date/description/amount`, display stays `Data/Descrição/Valor`.
 - `src/normalize.py` (39-line facade) + `src/normalization/` (`dates,amounts,signs,descriptions,tables`) + `src/validate.py:collect_errors`: valid vs `Linha/Motivo/Orientação` split; one bad row never aborts batch.
 - `src/matcher.py:find_candidates` (~119 lines): block by `amount ± tolerance + sign`, then date window; `token_set_ratio` fuzzy. Shared bits live in `src/entries.py` (`collect_entries`, ledger/amount index, `is_signal_blocked`), `src/guards.py`, `src/money.py` (`Decimal` only), `src/params.py` (`build_params`, snapshot), `src/labels.py` (pt-BR labels).
-- `src/classifier.py` (87) and `src/report.py` (111) are thin facades — real logic is in `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`: 5 tables `auto/potential/pending/divergent/duplicate`) and `src/reporting/` (`details`, `errors`, `rule_log`, `workbook`, `exceptions`, `kpis`, `formatting`, `lookups`, `headers`, `snapshots`, `determinism`, `summary`, `display_guards`). Edit the subpackage, keep the facade re-exporting (`__all__` is used by tests).
+- `src/classifier.py` (85) and `src/report.py` (114) are thin facades — real logic is in `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`: 5 tables `auto/potential/pending/divergent/duplicate`) and `src/reporting/` (`details`, `errors`, `rule_log`, `workbook`, `exceptions`, `kpis`, `formatting`, `lookups`, `headers`, `snapshots`, `determinism`, `summary`, `display_guards`). Edit the subpackage, keep the facade re-exporting (`__all__` is used by tests).
 - `src/display.py`: single source for `NaN→fallback` (`—` UI vs `''` report), BRL via `clean_brl_text`, dates. `reporting/formatting+lookups` and `ui/components/base` delegate here — do not duplicate.
 - `src/filters.py` (34-line facade) + `src/filtering/` (`text,values,dates,bounds,counters`): `filter_by_period` keeps unparseable dates, `filter_by_value` parses `R$ 2.500,00`; slider bounds use `display` frame, not `filtered`.
 - `src/review_state.py` (26-line facade) + `src/review/` (`transitions,counts,history,selection`).
@@ -37,7 +37,8 @@
 - UI: `ui/styles.css` Apple tokens — accent `#0066cc`, canvas `#ffffff`/`#f5f5f7`, ink `#1d1d1f`; body 17px/1.47; primary CTA pill `9999px`; cards 18px radius, hairline `#e0e0e0`, no shadow; `font-weight: 500` forbidden. Manual review (`Confirmar/Rejeitar/Desfazer`) lives only in `st.session_state` with timestamp, never mutates engine tables.
 
 ## Data / fixtures
-- Manual: `data/examples/extrato.csv`, `data/examples/interno.xlsx`. Edge cases `tests/fixtures/matrix/` (`;`+latin1, lowercase header, `(2500)` parens-negative, ISO date, empty, `invalido.pdf` reject).
+- Manual: `data/examples/extrato.csv`, `data/examples/interno.xlsx`. Edge cases `tests/fixtures/matrix/` (`;`+latin1, lowercase header, `(2500)` parens-negative, ISO date, empty, `invalido.pdf` + legacy `.xls` reject).
 - `data/output/` is gitignored — never write reports there in tests; build bytes in memory.
 - Deps pinned (`requirements.txt` is source of truth: `pandas==3.0.6 openpyxl==3.1.5 RapidFuzz==3.14.6 streamlit==1.64.0`, do not change versions); `src/` is offline (no `requests`/`http` outside Streamlit).
-- Specs: `PRD.md` v1.1 (8 tabs incl. `Duplicadas`; `§18` tree is current), `SPRINT.md` (S0–S5 all done, S5 = post-S4 refactor with no rule changes — consult before changing engine rules), `DESIGN.md` (token reference).
+- Specs: `PRD.md` v1.2 (8 tabs incl. `Duplicadas`; `§18` tree is current), `SPRINT.md` (S0–S6 all done, S6 = docs-only with no rule changes — consult before changing engine rules), `DESIGN.md` (token reference).
+- Docs say Python 3.12+ by product decision (`pyproject.toml` allows `>=3.10`) — do not 'fix' the version. Never create `docs/` or reference `docs/superpowers` — plans live outside the repo.

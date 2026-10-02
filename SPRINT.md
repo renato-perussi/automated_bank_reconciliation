@@ -3,7 +3,8 @@
 
 | Campo | Valor |
 |---|---|
-| Origem | `PRD.md` v1.0 + `DESIGN.md` |
+| Origem | `PRD.md` v1.2 + `DESIGN.md` |
+| Adendo | S6 docs-only em 02/10/2026, sem mudança de RF/RN/NFR; S0–S5 congeladas |
 | Idioma docs/dados/UI | pt-BR obrigatório |
 | Idioma código | 100% inglês (variáveis, constantes, funções, classes, módulos) |
 | Estilo código | aspas simples + sem comentários + funções ≤ ~30 linhas + `ruff` |
@@ -445,7 +446,23 @@ Objetivo: reduzir arquivos grandes a fachadas finas com pacotes testáveis, sem 
 
 - [x] S5-T01 — Bases compartilhadas: `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py` eliminando duplicação de `matcher`/`classifier`/`report`.
 - [x] S5-T02 — `app.py` 962→99 linhas: `src/filters.py`, `src/review_state.py`, `src/export_service.py` + `ui/sections/` (`upload/(file_io,mapping_ui,preview_ui,section)`, `params_section`, `results/(kpis,match_tab,pending_tab,duplicate_tab,error_tab,tabs)`, `review`, `history`, `export_section`). Wrappers compat preservados, `main` com 7 `render_*`.
-- [x] S5-T03 — `src/report.py` 791→111 e `src/classifier.py` 553→93: `src/reporting/` (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`, `display_guards`) + `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`). Bytes xlsx/csv e 5 tabelas idênticos.
-- [x] S5-T04 — Testes: 167→251 verdes, cobertura 93% (`test_filters`, `test_review_state`, `test_export_service`, `test_reporting_split`, `test_classification_split`, `test_display_guards`, `test_app_thin`, `test_guards_edge`, `test_loader_edge`, `test_filter_nan`). Planos em `docs/superpowers/plans/`.
+- [x] S5-T03 — `src/report.py` 791→114 e `src/classifier.py` 553→85: `src/reporting/` (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`, `display_guards`) + `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`). Bytes xlsx/csv e 5 tabelas idênticos.
+- [x] S5-T04 — Testes: 167→251 verdes, cobertura 93% (`test_filters`, `test_review_state`, `test_export_service`, `test_reporting_split`, `test_classification_split`, `test_display_guards`, `test_app_thin`, `test_guards_edge`, `test_loader_edge`, `test_filter_nan`).
 
 Critério de aceite: `ruff check src tests app.py ui scripts` limpo + `pytest -q` 251 verdes + auditoria `PASS` + invariantes (valor isolado nunca auto, sinal bloqueia RN-03, ambiguidade nunca auto RN-07, centavos nunca auto RN-08) preservadas.
+
+---
+
+## S6 — Alinhamento docs pós-refactor (sem mudança de regra)
+
+Objetivo: corrigir drifts entre docs e código real sem tocar em `src/`, `ui/` ou `app.py`. S0–S5 seguem congeladas.
+
+- [x] S6-T01 — PRD v1.1→v1.2 docs-only: corrige `.xls` para `.xlsx`-only em §3/RF-001/RF-002/NFR-012, completa corte `LOW_DESCRIPTION_SCORE=60` em RN-06/RN-08, atualiza §14 pins + `pytest-cov 7.1.0`, marca §15 DoD concluído, atualiza §18 com árvore real.
+- [x] S6-T02 — Erratas registradas sem reescrever história:
+  - [x] S4-T01 listou 7 abas por lapso; correto são 8 (`Resumo,Conciliadas,Para_Revisao,Pendentes,Divergentes,Duplicadas,Erros,Log_Regras`) conforme `src/reporting/workbook.py:120-152`.
+  - [x] S3-T01 citou `ui/components.py` arquivo único; real é pacote `ui/components/` com 7 módulos.
+  - [x] S0-T01 listou 8 nomes de `config.py`; real tem 19 linhas com `LOW_DESCRIPTION_SCORE`, `DUPLICATE_DESCRIPTION_SCORE` e limites de slider.
+  - [x] Planos pós-S4 arquivados fora do repo, sem cópia versionada.
+- [x] S6-T03 — README profissional: badges, sumário, stack pinada, arquitetura com fachadas finas, referência a PRD v1.2 e S0–S6.
+
+Critério de aceite: `ruff check src tests app.py ui scripts` limpo + `pytest -q` 251 verdes inalterados; nenhum RF/RN novo; `APP_VERSION` segue `1.0.0`.

@@ -3,9 +3,10 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1 |
-| Data | 01/10/2026 |
-| Status | Aprovado (MVP) + adendo S5/S6 sem mudança de regra |
+| Versão | 1.2 |
+| Data | 02/10/2026 |
+| Status | Aprovado (MVP) + adendo docs S6 sem mudança de regra |
+| Changelog | v1.2 docs-only: corrige `.xls` para `.xlsx`-only, completa corte `LOW=60`, atualiza §14/§15/§18; RN-01 a RN-10 inalteradas |
 | Idioma | pt-BR |
 | Origem | `Conciliação_Bancária_Automatizada.md` + `DESIGN.md` |
 | Formato de saída | Markdown pronto para `PRD.md` |
@@ -73,8 +74,8 @@ A conciliação manual entre sistema interno (ERP/planilha) e extrato bancário 
 
 ### 3.1 Dentro do Escopo (In)
 
-- Importação de extrato bancário em `.csv`, `.xls`, `.xlsx`.
-- Importação de lançamentos internos em `.csv`, `.xls`, `.xlsx`.
+- Importação de extrato bancário em `.csv`, `.xlsx` (`.xls` legado rejeitado com mensagem pt-BR).
+- Importação de lançamentos internos em `.csv`, `.xlsx` (`.xls` legado rejeitado com mensagem pt-BR).
 - Normalização de datas, valores e descrições.
 - Motor de comparação com critérios configuráveis.
 - Classificação: `conciliada_automatica`, `potencial_revisao`, `pendente_sem_correspondencia`, `divergente`, `duplicada_suspeita`.
@@ -170,8 +171,8 @@ flowchart TD
 
 | ID | Requisito | Prioridade | Critérios de Aceite |
 |---|---|---|---|
-| RF-001 | Importar extrato bancário em `.csv`, `.xls`, `.xlsx` | Must | Aceita 3 formatos até 20 MB; preview 5 linhas; rejeita `.pdf/.txt` com mensagem clara |
-| RF-002 | Importar lançamentos internos em `.csv`, `.xls`, `.xlsx` | Must | Mesmo aceite de RF-001, independente para segundo arquivo |
+| RF-001 | Importar extrato bancário em `.csv`, `.xlsx` | Must | Aceita 2 formatos até 20 MB; preview 5 linhas; rejeita `.pdf/.txt/.xls` com mensagem clara |
+| RF-002 | Importar lançamentos internos em `.csv`, `.xlsx` | Must | Mesmo aceite de RF-001, independente para segundo arquivo |
 | RF-003 | Mapeamento de colunas `Data`, `Descrição`, `Valor` com auto-detecção | Must | Auto-detecta por nome normalizado; permite correção manual; bloqueia execução se obrigatória não mapeada |
 | RF-004 | Validação de arquivo e reporte de erros linha a linha | Must | Lista linhas com erro + motivo; linhas com erro não participam do matching; arquivo vazio gera erro bloqueante |
 
@@ -199,7 +200,7 @@ flowchart TD
 | RF-012 | Correspondência com tolerância de data | Must | `4800` em `11/09` x `4800` em `12/09` concilia com tolerância ≥1; fora não concilia |
 | RF-013 | Tratamento de sinal débito/crédito | Must | `-2500` nunca concilia com `+2500`; `D/C`, `+/-`, parênteses respeitados |
 | RF-014 | Detecção de duplicidades intra-base | Must | 2 linhas idênticas na mesma base geram `duplicada_suspeita`; nunca concilia auto |
-| RF-015 | Fuzzy matching de descrição com rapidfuzz | Must | Usa `token_set_ratio` ou `WRatio`; score < threshold não eleva para automática |
+| RF-015 | Fuzzy matching de descrição com rapidfuzz | Must | Usa `token_set_ratio`; score < threshold não eleva para automática |
 | RF-016 | Classificação final em 5 estados + separação auto vs manual | Must | `conciliada_automatica`, `potencial_revisao`, `pendente_sem_correspondencia`, `divergente`, `duplicada_suspeita`; automática exige regra forte (RN-06) |
 
 ### 7.5 Revisão, relatório e auditoria
@@ -230,7 +231,7 @@ flowchart TD
 | NFR-009 | Design | Seguir obrigatoriamente `DESIGN.md` | Checklist visual seção 11 |
 | NFR-010 | Acessibilidade | Alvo ≥ 44x44, contraste, labels, navegação teclado | Verificação manual |
 | NFR-011 | Portabilidade | Rodar Windows, macOS, Linux Python 3.10+ | `pip install -r requirements.txt` + `streamlit run app.py` |
-| NFR-012 | Compatibilidade | Ler `.csv` (utf-8, latin1, `,`/`;`) e `.xls`/`.xlsx` via `openpyxl` | Matriz de arquivos de teste |
+| NFR-012 | Compatibilidade | Ler `.csv` (utf-8, latin1, `,`/`;`) e `.xlsx` via `openpyxl` primeira aba | Matriz de arquivos de teste + rejeição `.xls/.pdf` |
 | NFR-013 | Manutenibilidade / Código | Código 100% em inglês (variáveis, constantes, funções, classes, módulos); aspas simples; sem comentários | `ruff` + revisão reprova português em identificador e aspas duplas desnecessárias |
 | NFR-013a | Localização pt-BR | Dados e UI 100% em pt-BR: colunas `Data`, `Descrição`, `Valor`; dashboard Streamlit; relatórios exportados; mensagens de erro; arquivos de exemplo | Revisão manual: nenhum label técnico em inglês visível ao usuário |
 | NFR-014 | Manutenibilidade | Cobertura testes motor ≥ 80% | `pytest --cov` |
@@ -239,17 +240,17 @@ flowchart TD
 
 ### 8.1 Padrão de código clean (normativo)
 
-- **Código 100% em inglês (padrão de mercado):** variáveis, constantes, funções, classes e módulos em inglês. Ex.: `normalize_value`, `compare_pair`, `date_tolerance_days`, `fuzzy_threshold`, `value_tolerance`, `BANK_STATEMENT`, `INTERNAL_LEDGER`. Proibido identificador em português (`normalizar_valor`, `tolerancia_dias`, `valor`).
+- **Código 100% em inglês (padrão de mercado):** variáveis, constantes, funções, classes e módulos em inglês. Ex.: `normalize_amount`, `score_description`, `date_tolerance_days`, `fuzzy_threshold`, `value_tolerance`, `BANK_STATEMENT`, `INTERNAL_LEDGER`. Proibido identificador em português (`normalizar_valor`, `tolerancia_dias`, `valor`).
 - **Dados e UI 100% em pt-BR (consumidor brasileiro):** colunas de entrada/saída `Data`, `Descrição`, `Valor`; labels do dashboard; headers dos relatórios `relatorio_conciliacao.xlsx` / `relatorio_excecoes.csv`; mensagens de erro; arquivos de exemplo `extrato.csv`, `interno.xlsx`. Nenhum termo técnico em inglês visível ao usuário.
 - Camada de mapeamento obrigatória: `loader` lê colunas pt-BR → converte para variáveis internas em inglês → `report` / `ui` reconvertem para pt-BR na exibição/exportação.
 - Usar **aspas simples** em todo Python (`'text'`, não `"text"`), exceto quando string contém aspas simples ou docstrings.
 - **Sem comentários**; código limpo e autoexplicativo.
-- Funções responsabilidade única, máx. ~30 linhas; nomes explícitos (`normalize_value`, `compare_pair`).
+- Funções responsabilidade única, máx. ~30 linhas; nomes explícitos (`normalize_amount`, `score_description`).
 - Sem código morto, sem `print` debug; usar `logging`.
 - Formatação via `ruff` ou `black` adaptado para single-quote.
 
 ```python
-def normalize_value(raw):
+def normalize_amount(raw):
     if raw is None or raw == '':
         return None
     txt = str(raw).strip().replace('R$', '').strip()
@@ -272,9 +273,9 @@ def normalize_value(raw):
 | RN-03 | Tratamento de sinais débito/crédito | Normalizar para `+1` e `-1`. `-`, `D`, `() `= débito; `+`, `C` = crédito. Sinais diferentes bloqueiam matching. |
 | RN-04 | Detecção de duplicidades | Se mesma base tem ≥2 linhas mesmo `valor+sinal` e `diff data ≤ tolerancia` e `fuzzy ≥ 95`, marcar `duplicada_suspeita`. Não concilia auto. |
 | RN-05 | Fuzzy matching com rapidfuzz | `token_set_ratio` sobre descrição normalizada. `default 85`. Score 0–100 exibido. Se desativado, descrição ignorada. |
-| RN-06 | Separação automática vs revisão | `conciliada_automatica` sse: valor+sinal OK **E** data dentro tolerância **E** (fuzzy ≥ threshold **OU** fuzzy off com 1:1 sem ambiguidade) **E** sem duplicidade **E** sem ambiguidade (1 candidato). Senão: `potencial_revisao` se ≥1 candidato próximo; `pendente` se nenhum; `divergente` se diff valor ≤ limite mas não zero. |
+| RN-06 | Separação automática vs revisão | `conciliada_automatica` sse: valor+sinal OK **E** data dentro tolerância **E** (fuzzy ≥ threshold **OU** fuzzy off com 1:1 sem ambiguidade) **E** sem duplicidade **E** sem ambiguidade (1 candidato). Senão: `potencial_revisao` se ≥1 candidato próximo ou fuzzy 60–threshold; `pendente` se nenhum; `divergente` se valor exato com fuzzy < 60 (`descricao_divergente`, corte `LOW_DESCRIPTION_SCORE=60`). |
 | RN-07 | Desempate 1:N / N:1 | Se 1 casa com N, escolhe menor `diff data`, depois maior `fuzzy`. Demais viram `potencial_revisao` com `ambiguidade_multipla`. Nunca auto em ambiguidade. |
-| RN-08 | Tolerância de valor | `default 0.00`. Se `>0`, permite `abs(v1-v2) <= tolerancia`. Ex.: `2500.00` x `2500.04` com `0.05` = valor OK mas `potencial_revisao` com `divergencia_centavos`. |
+| RN-08 | Tolerância de valor + corte 60 | `default 0.00`. Se `>0`, permite `abs(v1-v2) <= tolerancia` mas nunca `auto`. Com `use_fuzzy` + `score < 60` → `divergente` com `divergencia_valor_descricao`; senão `potencial_revisao` com `divergencia_centavos`. Ex.: `2500.00` x `2500.04` com `0.05` = valor OK mas revisão. Constantes em `src/config.py:LOW_DESCRIPTION_SCORE=60`. |
 | RN-09 | Registro de regras e exceções | Cada saída contém `status`, `par_id`, `diff_dias`, `diff_valor`, `score_descricao`, `regra_id`, `parametros_snapshot`, `motivo`. Erros contêm `erro_codigo` (`DATA_INVALIDA`, `VALOR_INVALIDO`, `COLUNA_AUSENTE`). |
 | RN-10 | Confirmação manual tem precedência | `conciliada_manual` sobrescreve auto e registra ação + timestamp. Rejeição move para `pendente`. Reversível na sessão. |
 
@@ -394,34 +395,36 @@ Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KP
 
 ## 14. Tecnologias
 
-> Fonte da verdade: `requirements.txt` (somente dependências diretas de prod) + `requirements_dev.txt` (`ruff`, `pytest`, `pytest-cov`). Tabela abaixo reflete os pins reais em 29/09/2026. Não usar versões antigas de rascunhos anteriores (`pandas 2.2.3`, `rapidfuzz 3.10.0`, `streamlit 1.39.0`, `pytest 8.3.x` estão superadas).
+> Fonte da verdade: `requirements.txt` (somente dependências diretas de prod) + `requirements_dev.txt` (`ruff`, `pytest`, `pytest-cov`). Tabela abaixo reflete os pins reais em 02/10/2026. Não usar versões antigas de rascunhos anteriores (`pandas 2.2.3`, `rapidfuzz 3.10.0`, `streamlit 1.39.0`, `pytest 8.3.x` estão superadas).
 
-| Tecnologia | Uso | Versão real (`requirements.txt`) |
+| Tecnologia | Uso | Versão real |
 |---|---|---|
 | Python | Linguagem | `3.12.x` (mínimo `3.10`, `.venv` em `3.12`) |
 | pandas | Comparação de tabelas | `3.0.6` |
 | openpyxl | Leitura/escrita Excel | `3.1.5` |
 | rapidfuzz (`RapidFuzz`) | Fuzzy descrições (`token_set_ratio`) | `3.14.6` |
 | Streamlit | Tela de revisão | `1.64.0` |
-| pytest (+ coverage) | Testes motor (em `requirements_dev.txt`) | `9.1.1` |
+| pytest (+ coverage) | Testes motor (em `requirements_dev.txt`) | `9.1.1` + `pytest-cov 7.1.0` |
 | ruff | Lint + aspas simples (em `requirements_dev.txt`) | `0.16.9` |
 
-Dependências transitivas (`numpy`, `pyarrow`, `pillow`, `altair`, `protobuf`, etc.) resolvidas via `pip` na instalação. Qualquer upgrade exige reexecução dos testes de matching (Casos A–D).
+Dependências transitivas (`numpy`, `pyarrow`, `pillow`, `altair`, `protobuf`, etc.) resolvidas via `pip` na instalação. Qualquer upgrade exige reexecução dos testes de matching (Casos A–D). Lint via `pyproject.toml`: `line-length 100`, regras `F,E,W,I`, `quote-style single`.
 
 ---
 
 ## 15. Critérios de Aceite / Definition of Done
 
-- [ ] Importa exemplos da seção 10 e reproduz Casos A–D da seção 9.1.
-- [ ] Com defaults, Caso B concilia auto; Caso A auto se fuzzy ≥85 senão revisão.
-- [ ] Valor isolado nunca gera automática.
-- [ ] Duplicidade bloqueia automática. Sinal oposto nunca concilia.
-- [ ] Relatórios Excel/CSV com abas/colunas + log.
-- [ ] KPIs exibem % conciliado, revisão, pendente, divergente.
-- [ ] 5k x 5k em < 30s; roda offline via `pip install -r requirements.txt` + `streamlit run app.py`.
-- [ ] Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + clean: aspas simples, sem comentários, funções pequenas, `ruff` limpo. Dados, dashboard, colunas e relatórios 100% em pt-BR.
-- [ ] `pytest` verde, cobertura motor ≥80%.
-- [ ] Visual conforme `DESIGN.md`: body 17px, 1 acento `#0066cc`, pill primário, cards sem sombra, responsivo.
+- [x] Importa exemplos da seção 10 e reproduz Casos A–D da seção 9.1.
+- [x] Com defaults, Caso B concilia auto; Caso A auto se fuzzy ≥85 senão revisão.
+- [x] Valor isolado nunca gera automática.
+- [x] Duplicidade bloqueia automática. Sinal oposto nunca concilia.
+- [x] Relatórios Excel/CSV com abas/colunas + log.
+- [x] KPIs exibem % conciliado, revisão, pendente, divergente.
+- [x] 5k x 5k em < 30s; roda offline via `pip install -r requirements.txt` + `streamlit run app.py`.
+- [x] Código 100% em inglês (variáveis, constantes, funções, classes, módulos) + clean: aspas simples, sem comentários, funções pequenas, `ruff` limpo. Dados, dashboard, colunas e relatórios 100% em pt-BR.
+- [x] `pytest` verde, cobertura motor ≥80%.
+- [x] Visual conforme `DESIGN.md`: body 17px, 1 acento `#0066cc`, pill primário, cards sem sombra, responsivo.
+
+> Evidência v1.2 em 02/10/2026: `pytest -q` 251 verdes, cobertura 93%, `ruff check` limpo, `scripts/bench.py` 5000x5000 < 30s.
 
 ---
 
@@ -450,37 +453,23 @@ Dependências transitivas (`numpy`, `pyarrow`, `pillow`, `altair`, `protobuf`, e
 
 ---
 
-## 18. Estrutura de Pastas Sugerida
+## 18. Estrutura de Pastas (real v1.2, pós-S5 sem mudança de regra)
 
 ```text
 automated_bank_reconciliation/
-├── app.py
-├── requirements.txt
-├── PRD.md
-├── DESIGN.md
+├── app.py (99 linhas, só monta painéis)
+├── requirements.txt (+ requirements_dev.txt) / pyproject.toml / .streamlit/config.toml
+├── PRD.md / DESIGN.md / SPRINT.md / README.md
 ├── src/
-│   ├── display.py
-│   ├── loader.py
-│   ├── mapping.py
-│   ├── normalize.py + normalization/
-│   ├── matcher.py
-│   ├── classifier.py + classification/
-│   ├── report.py + reporting/
-│   ├── filters.py + filtering/
-│   ├── review_state.py + review/
-│   └── config.py
-├── ui/
-│   ├── components/
-│   ├── sections/ (inclui result_filters.py)
-│   └── styles.css
-├── tests/
-│   ├── test_normalize.py
-│   ├── test_matcher.py
-│   ├── test_classifier.py
-│   └── fixtures/
-│       ├── extrato.csv
-│       └── interno.xlsx
-└── data/
-    ├── examples/
-    └── output/
+│   ├── config.py (defaults + LOW=60 + DUP95 + limites 20MB/20k + APP_VERSION 1.0.0)
+│   ├── loader.py / mapping.py / validate.py / display.py / logger.py
+│   ├── normalize.py + normalization/ / matcher.py + entries.py + guards.py + money.py + params.py + labels.py
+│   ├── classifier.py (85 linhas) + classification/ (rules, ambiguity, duplicates, pending, tables)
+│   ├── report.py (114 linhas) + reporting/ (13 módulos: headers, formatting, kpis, snapshots, lookups, details, errors, rule_log, workbook, exceptions, determinism, summary, display_guards)
+│   ├── filters.py + filtering/ / review_state.py + review/ / export_service.py
+├── ui/styles.css / components/{base,navigation,kpis,tables,match_display,pending_display,review_cards}
+│   └── sections/{upload/{file_io,mapping_ui,preview_ui,section},params_section,results/{kpis,match_tab,pending_tab,duplicate_tab,error_tab,tabs},result_filters,review,history,export_section}
+├── tests/ (251 verdes, 93%) / fixtures/{extrato.csv,interno.xlsx,duplicadas.csv,matrix/6 variações}
+├── scripts/bench.py (5000x5000 < 30s)
+└── data/examples/{extrato.csv,interno.xlsx} (data/output/ gitignored)
 ```
