@@ -84,34 +84,55 @@ def render_subnav() -> None:
 
 
 def _concepts_items() -> list:
-    '''Return guide title body pairs in pt-BR.'''
+    '''Return guide title plus bullet pairs in pt-BR.'''
     return [
         (
-            '1. Captação de candidatos',
-            'Cada lançamento do extrato é comparado com os internos e vira candidato quando '
-            'o valor fica dentro da tolerância, o sinal é igual e a data cai na janela de dias. '
-            'Tolerância maior significa rede maior: mais candidatos, nunca menos.',
+            '1. Envie os arquivos e clique em Conciliar',
+            [
+                'Suba o extrato bancário e os lançamentos internos em CSV ou '
+                'Excel (até 20 MB cada).',
+                'Só três colunas importam — data, descrição e valor — e valem '
+                'apelidos como date, histórico e amount.',
+                'Se o app não reconhecer alguma coluna, o painel Mapear colunas '
+                'abre sozinho.',
+                'Colunas extras não atrapalham, mas não entram na conciliação.',
+                'Confira as prévias, ajuste os parâmetros só se precisar e clique '
+                'em Conciliar.',
+            ],
         ),
         (
-            '2. Classificação em 5 estados',
-            'Conciliada: valor, data e descrição batem com um único candidato. Para revisão: há '
-            'candidato próximo, mas algo impede o automático, como dois candidatos para a mesma '
-            'linha. Pendente: sem candidato. Divergente: valor próximo com descrição muito '
-            'diferente. Duplicada: linhas quase iguais dentro da mesma base.',
+            '2. Leia o resultado por aba',
+            [
+                'Conciliadas não pedem ação.',
+                'Para revisão pede seu olho: escolha o par, compare lado a lado e '
+                'clique em Confirmar ou Rejeitar (dá para desfazer).',
+                'Pendentes não acharam par; Divergentes têm valor parecido com '
+                'descrição bem diferente; Duplicadas se repetem dentro da mesma base.',
+            ],
         ),
         (
-            '3. Por que Conciliadas pode cair',
-            'O automático exige candidato único. Ao aumentar a tolerância, uma linha pode ganhar '
-            'um segundo candidato e ir para revisão por segurança: os pares não somem, mudam de '
-            'estado. Acompanhe Conciliadas e Para revisão somadas, e espere Pendentes cair.',
+            '3. Baixe os relatórios',
+            [
+                'O Excel traz 8 abas com tudo, incluindo suas decisões manuais e '
+                'a versão do motor.',
+                'O CSV traz só as exceções para tratar.',
+                'Se mudar algum parâmetro depois de conciliar, clique em Conciliar '
+                'de novo antes de baixar.',
+            ],
         ),
     ]
+
+
+def _guide_block(title: str, bullets: list) -> str:
+    '''Build titled bullet list for footer guide.'''
+    items = ''.join(f'<li>{bullet}</li>' for bullet in bullets)
+    return f'<p><strong>{title}</strong></p><ul>{items}</ul>'
 
 
 def render_footer() -> None:
     '''Render footer box with embedded concepts guide.'''
     items = ''.join(
-        f'<p><strong>{title}</strong><br>{body}</p>' for title, body in _concepts_items()
+        _guide_block(title, bullets) for title, bullets in _concepts_items()
     )
     st.markdown(
         '<div class="footer"><details class="footer-guide">'

@@ -51,6 +51,38 @@ def ensure_use_fuzzy(value: object) -> None:
         raise ValueError('Usar similaridade deve ser verdadeiro ou falso.')
 
 
+def params_equal(first: object, second: object) -> bool:
+    '''Compare engine params normalizing tolerance coercions.'''
+    if not isinstance(first, dict) or not isinstance(second, dict):
+        return False
+    if set(first.keys()) != set(second.keys()):
+        return False
+    first_days = first.get('date_tolerance_days')
+    second_days = second.get('date_tolerance_days')
+    if isinstance(first_days, bool) != isinstance(second_days, bool):
+        return False
+    first_fuzzy = first.get('fuzzy_threshold')
+    second_fuzzy = second.get('fuzzy_threshold')
+    if isinstance(first_fuzzy, bool) != isinstance(second_fuzzy, bool):
+        return False
+    first_flag = first.get('use_fuzzy')
+    second_flag = second.get('use_fuzzy')
+    if isinstance(first_flag, bool) != isinstance(second_flag, bool):
+        return False
+    try:
+        left = Decimal(str(first.get('value_tolerance')))
+        right = Decimal(str(second.get('value_tolerance')))
+        same_tolerance = left == right
+    except (InvalidOperation, ValueError, TypeError, AttributeError):
+        return False
+    return (
+        first_days == second_days
+        and first_fuzzy == second_fuzzy
+        and first_flag == second_flag
+        and same_tolerance
+    )
+
+
 def _clean_snapshot_tolerance(value: object) -> Decimal:
     '''Convert snapshot tolerance with fallback default.'''
     if isinstance(value, Decimal):

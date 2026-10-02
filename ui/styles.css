@@ -179,6 +179,15 @@ body {
   margin: 12px 0 0;
 }
 
+.footer-guide ul {
+  margin: 4px 0 0 20px;
+  padding: 0;
+}
+
+.footer-guide li {
+  margin: 4px 0;
+}
+
 .display-lg {
   font-family: 'SF Pro Display', system-ui, -apple-system, Inter, sans-serif;
   font-size: 32px;
@@ -249,10 +258,6 @@ div[data-testid='stVerticalBlock']:has(
   letter-spacing: -0.374px;
   line-height: 1.1;
   color: #1d1d1f;
-}
-
-.export-center {
-  text-align: center;
 }
 
 .review-divider {

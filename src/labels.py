@@ -54,7 +54,7 @@ def reason_short(raw: object) -> str:
     if raw is None:
         return '—'
     text = str(raw).strip()
-    if text == '' or text.lower() in ('nan', 'nat', 'none', '—'):
+    if text == '' or text.lower() in ('nan', 'nat', 'none', '—', '<na>'):
         return '—'
     if text in _REASON_SHORT_PT:
         return _REASON_SHORT_PT[text]

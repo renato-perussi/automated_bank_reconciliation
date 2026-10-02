@@ -368,7 +368,7 @@ Data,Descrição,Valor
 | T-04 KPIs | 5 cards: Total extrato, Total interno, % Auto, % Revisão, % Pendente/Divergente | `{component.store-utility-card}` sem sombra, `{colors.surface-pearl}` |
 | T-05 Resultados | Abas `Conciliadas` / `Para Revisão` / `Pendentes` / `Divergentes` / `Duplicadas` / `Erros` + filtros | `{component.product-tile-light}`, `{component.text-link}` `{colors.primary}` |
 | T-06 Revisão | Lado a lado extrato x interno + diff + score + regra + Confirmar/Rejeitar | `{component.button-primary}` Confirmar; `{component.button-secondary-pill}` Rejeitar; touch 44x44 |
-| T-07 Exportação | Card com resumo (`N conciliadas • N para revisão • N pendentes`) + downloads Excel/CSV; `{component.footer}` é guia de conceitos, versão do motor vai nos relatórios | `{component.store-utility-card}`, `{component.button-primary}`, `{component.button-secondary-pill}`, `{component.footer}` |
+| T-07 Exportação | Card com conteúdo + proveniência (versão do motor, decisões manuais, aviso de staleness) + downloads Excel/CSV diferenciados; `{component.footer}` é guia de conceitos, versão do motor vai nos relatórios | `{component.store-utility-card}`, `{component.button-primary}`, `{component.button-secondary-pill}`, `{component.footer}` |
 | T-08 Erros | Tabela erros + motivo + orientação | `{colors.ink-muted-48}`, `{typography.caption}` |
 
 Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KPIs 1 coluna, tabelas scroll horizontal, hero 32→26px.

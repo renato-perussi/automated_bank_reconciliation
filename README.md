@@ -48,7 +48,7 @@ Fluxo em 7 passos:
 4. Confira o mapeamento das colunas Data, Descrição e Valor e veja as prévias formatadas abaixo dos cartões.
 5. Ajuste a tolerância de dias, a similaridade mínima e a tolerância de valor.
 6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes, Duplicadas e Erros. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
-7. Clique em Baixar Excel para o relatório completo e em Baixar CSV de exceções para a lista só com pendências. O cartão mostra o resumo (conciliadas, revisão, pendentes) e o rodapé explica como funciona a conciliação. A versão do motor vai nos relatórios.
+7. Clique em Baixar relatório em Excel (8 abas) ou em Baixar só exceções (CSV). O cartão mostra o conteúdo, a versão do motor e as decisões manuais incluídas, e avisa se os parâmetros mudaram após a conciliação. O rodapé explica como funciona a conciliação.
 
 Você pode testar com os arquivos de exemplo em `data/examples/`:
 

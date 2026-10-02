@@ -165,7 +165,7 @@ def test_seven_step_flow_documented() -> None:
     '''Seven step flow stays documented and wired.'''
     text = Path('README.md').read_text(encoding='utf-8')
     assert 'Fluxo em 7 passos' in text
-    assert 'Baixar Excel' in text
-    assert 'Baixar CSV' in text
+    assert 'Baixar relatório em Excel' in text
+    assert 'Baixar só exceções' in text
     source = inspect.getsource(app_module.main)
     assert source.count('render_') >= 7

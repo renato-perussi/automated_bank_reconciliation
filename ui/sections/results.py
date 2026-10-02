@@ -208,13 +208,6 @@ def _tab_total(results: dict, key: str) -> int:
     return _active_len(results, key, key)
 
 
-def _result_tab_labels(results: dict) -> list:
-    '''Return six pt-BR tab labels with icons and live counts.'''
-    return [
-        _tab_label(icon, name, _tab_total(results, key)) for key, icon, name in _RESULT_TABS
-    ]
-
-
 _RESULT_TABS = [
     ('auto', ':material/check_circle:', 'Conciliadas'),
     ('potential', ':material/rate_review:', 'Para revisão'),
@@ -223,6 +216,13 @@ _RESULT_TABS = [
     ('duplicate', ':material/content_copy:', 'Duplicadas'),
     ('errors', ':material/error:', 'Erros'),
 ]
+
+
+def _result_tab_labels(results: dict) -> list:
+    '''Return six pt-BR tab labels with icons and live counts.'''
+    return [
+        _tab_label(icon, name, _tab_total(results, key)) for key, icon, name in _RESULT_TABS
+    ]
 
 
 def _default_tab_label(labels: list) -> str | None:

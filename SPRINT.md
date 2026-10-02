@@ -356,7 +356,8 @@ Critério de aceite: RF-019/020 — Excel com 7 abas + CSV só exceções, ambos
 Arquivos: `src/report.py` + `app.py`.
 
 - [x] `build_rule_log(results)` com por decisão: `rule_id` (RN-01…), `match_id`, `day_diff`, `value_diff`, `description_score`, `params_snapshot`, `reason`, `error_code` quando aplicável.
-- [x] T-07 Exportação: card com resumo de contagens + botões download `st.download_button('Baixar Excel', ...)` (primário) + `'Baixar CSV de exceções'` (secundário); sem barra fixa; `{component.footer}` parchment como guia de conceitos (versão do motor só nos relatórios).
+- [x] T-07 Exportação: card com descrição do conteúdo + proveniência (`Motor v` + decisões manuais) + botões download `'Baixar relatório em Excel'` (primário, `:material/table_chart:`) + `'Baixar só exceções (CSV)'` (secundário, `:material/filter_list:`) com caption cada; sem barra fixa; `{component.footer}` parchment como guia de conceitos (versão do motor só nos relatórios).
+  - [x] Export congela `results_params` (cabeçalho sempre consistente com decisões); aviso quando parâmetros mudam após conciliar; botão vira `st.error` pt-BR com bytes vazios; `params_equal` público em `src/params.py` (antes privado em `params_section`); título à esquerda (`.export-center` removido); mobile 360px verificado no browser (colunas empilham, sem overflow).
 - [x] T-08 Erros: tabela pt-BR `Linha | Motivo | Como corrigir` + `{component.icon-circular}`; sem vermelho de marca (usar ink + texto).
 - [x] RN-10: ação manual registra `review_action` + timestamp, sobrescreve auto, reversível na sessão, visível no log.
 - [x] Teste: cada linha `auto`/`potential` tem `rule_id`; confirmação manual aparece no log.

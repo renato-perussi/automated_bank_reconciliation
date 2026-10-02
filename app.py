@@ -161,7 +161,11 @@ def _cached_export_payloads(
 def build_export_payloads() -> tuple:
     '''Build excel csv bytes in memory without files.'''
     results = st.session_state.get('results')
-    params = st.session_state.get('params', build_params())
+    frozen = st.session_state.get('results_params')
+    if isinstance(frozen, dict):
+        params = dict(frozen)
+    else:
+        params = st.session_state.get('params', build_params())
     statement_frame = st.session_state.get('statement_df')
     ledger_frame = st.session_state.get('ledger_df')
     statement_errors = st.session_state.get('statement_errors')

@@ -1,14 +1,14 @@
 '''Tolerance controls plus concile action.'''
 
 from datetime import date, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 import streamlit as st
 
 from src.classifier import build_result_tables
 from src.config import DATE_TOLERANCE_DAYS, FUZZY_THRESHOLD, VALUE_TOLERANCE
 from src.logger import get_logger
-from src.params import build_params
+from src.params import build_params, params_equal
 
 logger = get_logger(__name__)
 
@@ -66,24 +66,6 @@ def _render_fuzzy_inputs() -> tuple[bool, int]:
     return (bool(use_fuzzy), int(threshold))
 
 
-def _params_equal(first: dict, second: dict) -> bool:
-    '''Compare engine params normalizing tolerance coercions.'''
-    if set(first.keys()) != set(second.keys()):
-        return False
-    try:
-        left = Decimal(str(first.get('value_tolerance')))
-        right = Decimal(str(second.get('value_tolerance')))
-        same_tolerance = left == right
-    except (InvalidOperation, ValueError, TypeError, AttributeError):
-        return False
-    return (
-        first.get('date_tolerance_days') == second.get('date_tolerance_days')
-        and first.get('fuzzy_threshold') == second.get('fuzzy_threshold')
-        and first.get('use_fuzzy') == second.get('use_fuzzy')
-        and same_tolerance
-    )
-
-
 def _render_stale_warning() -> None:
     '''Warn when params changed after last conciliation.'''
     if st.session_state.get('results') is None:
@@ -95,7 +77,7 @@ def _render_stale_warning() -> None:
     if not isinstance(frozen, dict):
         st.caption('Parâmetros alterados após a conciliação. Clique em Conciliar novamente.')
         return
-    if not _params_equal(dict(frozen), dict(current)):
+    if not params_equal(dict(frozen), dict(current)):
         st.caption('Parâmetros alterados após a conciliação. Clique em Conciliar novamente.')
 
 
