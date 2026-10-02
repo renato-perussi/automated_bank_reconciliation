@@ -23,7 +23,7 @@ from ui.components import (
     render_subnav,
 )
 from ui.sections.export_section import render_export_section
-from ui.sections.params_section import render_concile_button, render_params_section
+from ui.sections.params_section import render_params_section
 from ui.sections.results import render_kpi_section, render_results_section
 from ui.sections.upload import fetch_raw_table as _fetch_table
 from ui.sections.upload import render_upload_section
@@ -40,6 +40,8 @@ def init_state() -> None:
         st.session_state['params'] = build_params()
     if 'results' not in st.session_state:
         st.session_state['results'] = None
+    if 'results_params' not in st.session_state:
+        st.session_state['results_params'] = None
     if 'review_log' not in st.session_state:
         st.session_state['review_log'] = []
     if 'manual_confirmed' not in st.session_state:
@@ -180,7 +182,6 @@ def main() -> None:
     render_subnav()
     render_upload_section()
     render_params_section()
-    render_concile_button()
     render_kpi_section()
     render_results_section()
     results = st.session_state.get('results')

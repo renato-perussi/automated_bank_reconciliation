@@ -48,7 +48,7 @@ Fluxo em 7 passos:
 4. Confira o mapeamento das colunas Data, Descrição e Valor e veja as prévias formatadas abaixo dos cartões.
 5. Ajuste a tolerância de dias, a similaridade mínima e a tolerância de valor.
 6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes, Duplicadas e Erros. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
-7. Clique em Baixar Excel para o relatório completo e em Baixar CSV de exceções para a lista só com pendências. A barra fixa mostra os indicadores e o rodapé mostra a versão.
+7. Clique em Baixar Excel para o relatório completo e em Baixar CSV de exceções para a lista só com pendências. O cartão mostra o resumo (conciliadas, revisão, pendentes) e o rodapé explica como funciona a conciliação. A versão do motor vai nos relatórios.
 
 Você pode testar com os arquivos de exemplo em `data/examples/`:
 
@@ -79,11 +79,11 @@ Dica: no CSV, quando o valor tem vírgula, deixe ele entre aspas. O Excel e o Li
 
 Você poderá ajustar na tela, mas os valores iniciais são:
 
-- Tolerância de dias: 2 (cobre compensação de 1 dia, ex.: 11/09 com 12/09).
+- Tolerância de dias: 2 (cobre diferenças de até 2 dias, D+2; ex.: 11/09 com 13/09).
 - Similaridade mínima da descrição: 85 de 0 a 100. Desligue a chave Usar similaridade para ignorar o texto.
-- Tolerância de valor: R$ 0,00 (exige valor exato). Ex.: 0,05 permite diferença de centavos.
+- Tolerância de valor: 0.00 (exige valor exato). Para permitir centavos, digite com ponto, ex.: 0.05.
 
-Limites de segurança: arquivo até 20 MB, aviso se passar de 20000 linhas com Volume alto: resultado pode demorar.
+Limites de segurança: arquivo até 20 MB; acima de 20000 linhas o cálculo pode demorar (aviso no log com Volume alto: resultado pode demorar).
 
 ## Relatórios
 
@@ -137,7 +137,7 @@ Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 ## Pastas do projeto
 
-- `app.py`: tela fina (190 linhas) que só monta os painéis e chama as seções.
+- `app.py`: tela fina (194 linhas) que só monta os painéis e chama as seções.
 - `src/`: motor e serviços (leitura, normalização, comparação, classificação e relatórios). Fachadas finas com a lógica em pacotes:
   - `src/display.py`: textos, datas e valores para tela e relatório.
   - `src/normalization/` + `src/normalize.py`: datas, valores, sinais, descrições e tabelas.

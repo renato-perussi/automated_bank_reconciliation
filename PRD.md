@@ -336,7 +336,7 @@ Data,Descrição,Valor
 
 ### 11.2 Tipografia
 
-- `{typography.hero-display}` 56px/600/-0.28px, `{typography.display-lg}` 40px/600, `{typography.body}` 17px/400/1.47/-0.374px (não 16px).
+- `{typography.hero-display}` 56px/600/-0.28px, `{typography.display-lg}` 40px/600 no token (herói do app usa 32px, 28/26px mobile, por densidade de ferramenta interna), `{typography.body}` 17px/400/1.47/-0.374px (não 16px).
 - Famílias: `SF Pro Display, system-ui, -apple-system, sans-serif` + fallback `Inter` em non-Apple.
 - Weights apenas 300/400/600/700. Weight 500 proibido.
 
@@ -354,7 +354,7 @@ Data,Descrição,Valor
 
 - `{component.sub-nav-frosted}` parchment 80% + blur, stepper centralizado sem sticky (`{component.global-nav}` removida: duplicava o título sem agregar navegação).
 - `{component.button-primary}` blue pill 11x22px; `{component.button-secondary-pill}` ghost; `{component.button-dark-utility}`; `{component.button-pearl-capsule}`.
-- `{component.product-tile-light}` / parchment / dark; `{component.store-utility-card}` white + hairline + 18px + 24px; `{component.search-input}` pill 44px; `{component.floating-sticky-bar}`; `{component.footer}` parchment.
+- `{component.product-tile-light}` / parchment / dark; `{component.store-utility-card}` white + hairline + 18px + 24px; `{component.search-input}` pill 44px; `{component.footer}` parchment guia de conceitos (`{component.floating-sticky-bar}` não utilizado: exportação usa card com downloads, sem barra fixa).
 
 ---
 
@@ -364,11 +364,11 @@ Data,Descrição,Valor
 |---|---|---|
 | T-01 Header + Nav | Título `Conciliação Bancária`, stepper centralizado (1 Upload → 2 Parâmetros → 3 Resultados) | `{component.sub-nav-frosted}`, `{typography.display-lg}` |
 | T-02 Upload | Dois uploaders + mapeamento colunas + prévias full-width com rótulos pt-BR (`Data, Descrição, Valor`), datas dd/mm/aaaa e valores em R$ | `{component.store-utility-card}`, `{rounded.lg}`, `{component.button-primary}` `{rounded.pill}` |
-| T-03 Parâmetros | `tolerancia_dias` 0–30 default 2, `threshold_fuzzy` 0–100 default 85, `tolerancia_valor` default 0.00 | `{component.configurator-option-chip}`, `{component.search-input}` |
+| T-03 Parâmetros | `tolerancia_dias` 0–30 default 2, `threshold_fuzzy` 0–100 default 85, `tolerancia_valor` default 0.00, em card com `Conciliar` dentro; legendas dinâmicas por controle e aviso `Parâmetros alterados...` se mudar após conciliar | `{component.configurator-option-chip}`, `{component.search-input}`, `{component.store-utility-card}` |
 | T-04 KPIs | 5 cards: Total extrato, Total interno, % Auto, % Revisão, % Pendente/Divergente | `{component.store-utility-card}` sem sombra, `{colors.surface-pearl}` |
 | T-05 Resultados | Abas `Conciliadas` / `Para Revisão` / `Pendentes` / `Divergentes` / `Duplicadas` / `Erros` + filtros | `{component.product-tile-light}`, `{component.text-link}` `{colors.primary}` |
 | T-06 Revisão | Lado a lado extrato x interno + diff + score + regra + Confirmar/Rejeitar | `{component.button-primary}` Confirmar; `{component.button-secondary-pill}` Rejeitar; touch 44x44 |
-| T-07 Exportação | Downloads CSV/Excel + `floating-sticky-bar` com KPIs | `{component.floating-sticky-bar}`, `{component.button-pearl-capsule}`, `{component.footer}` |
+| T-07 Exportação | Card com resumo (`N conciliadas • N para revisão • N pendentes`) + downloads Excel/CSV; `{component.footer}` é guia de conceitos, versão do motor vai nos relatórios | `{component.store-utility-card}`, `{component.button-primary}`, `{component.button-secondary-pill}`, `{component.footer}` |
 | T-08 Erros | Tabela erros + motivo + orientação | `{colors.ink-muted-48}`, `{typography.caption}` |
 
 Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KPIs 1 coluna, tabelas scroll horizontal, hero 32→26px.

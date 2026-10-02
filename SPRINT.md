@@ -39,7 +39,7 @@
   - Tipo: `{typography.body}` 17px/400/1.47, headlines 600 com tracking negativo, weight 500 proibido.
   - Formas: `{rounded.pill}` 9999px para CTA primário, `{rounded.lg}` 18px para cards, tiles full-bleed sem radius.
   - Sem sombra em cards/botões. Sombra única só em render de produto.
-  - Componentes: `{component.sub-nav-frosted}`, `{component.button-primary}`, `{component.store-utility-card}`, `{component.search-input}`, `{component.floating-sticky-bar}`, `{component.footer}`.
+  - Componentes: `{component.sub-nav-frosted}`, `{component.button-primary}`, `{component.button-secondary-pill}`, `{component.store-utility-card}`, `{component.search-input}`, `{component.footer}` (`{component.floating-sticky-bar}` não utilizado: sem barra fixa no app).
 
 ---
 
@@ -295,9 +295,11 @@ Arquivo: `app.py` (etapas 1–3).
 - [x] T-03 Parâmetros (`{component.configurator-option-chip}` + `{component.search-input}`):
   - [x] `st.slider('Tolerância de dias', 0, 30, 2)` → `date_tolerance_days`
   - [x] `st.slider('Similaridade mínima (%)', 0, 100, 85)` + `st.toggle('Usar similaridade de descrição', True)` → `fuzzy_threshold` + `use_fuzzy`
-  - [x] `st.number_input('Tolerância de valor (R$)', 0.00, 10.00, 0.00, step=0.01)` → `value_tolerance`
-  - [x] textos de ajuda em `{colors.ink-muted-48}` pt-BR, ex.: `'2 dias cobre compensação D+1.'`
-- [x] Manter estado em `st.session_state` (`statement_df`, `ledger_df`, `params`, `results`).
+  - [x] `st.number_input('Tolerância de valor (R$)', min 0.00, sem máximo, default VALUE_TOLERANCE, step=0.01)` → `value_tolerance`
+  - [x] controles em card (`st.container(border=True)`) com botão `'Conciliar'` (ícone `:material/compare_arrows:`) dentro
+  - [x] legendas dinâmicas em `{colors.ink-muted-48}` pt-BR: dias sem repetição com exemplo `dd/mm` real (`D+N`), similaridade por faixa (permissivo/equilíbrio/rígido) e valor com ponto decimal; sem `help=` redundante
+  - [x] aviso `Parâmetros alterados após a conciliação...` abaixo do botão quando `params != results_params` (sessão, sem tocar no engine; `value_tolerance` normalizada, `Decimal`/`float`/`str` iguais não disparam)
+- [x] Manter estado em `st.session_state` (`statement_df`, `ledger_df`, `params`, `results`, `results_params`).
 
 Critério de aceite: upload → mapeamento → parâmetros → `Conciliar` em ≤ 4 cliques; labels 100% pt-BR; variáveis internas em inglês.
 
@@ -355,7 +357,7 @@ Critério de aceite: RF-019/020 — Excel com 7 abas + CSV só exceções, ambos
 Arquivos: `src/report.py` + `app.py`.
 
 - [x] `build_rule_log(results)` com por decisão: `rule_id` (RN-01…), `match_id`, `day_diff`, `value_diff`, `description_score`, `params_snapshot`, `reason`, `error_code` quando aplicável.
-- [x] T-07 Exportação: botões download `st.download_button('Baixar Excel', ...)` + `'Baixar CSV de exceções'` (`{component.button-pearl-capsule}` secundário) + `{component.floating-sticky-bar}` com KPIs persistentes + `{component.footer}` parchment com versão.
+- [x] T-07 Exportação: card com resumo de contagens + botões download `st.download_button('Baixar Excel', ...)` (primário) + `'Baixar CSV de exceções'` (secundário); sem barra fixa; `{component.footer}` parchment como guia de conceitos (versão do motor só nos relatórios).
 - [x] T-08 Erros: tabela pt-BR `Linha | Motivo | Como corrigir` + `{component.icon-circular}`; sem vermelho de marca (usar ink + texto).
 - [x] RN-10: ação manual registra `review_action` + timestamp, sobrescreve auto, reversível na sessão, visível no log.
 - [x] Teste: cada linha `auto`/`potential` tem `rule_id`; confirmação manual aparece no log.
