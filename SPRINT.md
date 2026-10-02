@@ -39,7 +39,7 @@
   - Tipo: `{typography.body}` 17px/400/1.47, headlines 600 com tracking negativo, weight 500 proibido.
   - Formas: `{rounded.pill}` 9999px para CTA primário, `{rounded.lg}` 18px para cards, tiles full-bleed sem radius.
   - Sem sombra em cards/botões. Sombra única só em render de produto.
-  - Componentes: `{component.global-nav}`, `{component.sub-nav-frosted}`, `{component.button-primary}`, `{component.store-utility-card}`, `{component.search-input}`, `{component.floating-sticky-bar}`, `{component.footer}`.
+  - Componentes: `{component.sub-nav-frosted}`, `{component.button-primary}`, `{component.store-utility-card}`, `{component.search-input}`, `{component.floating-sticky-bar}`, `{component.footer}`.
 
 ---
 
@@ -286,11 +286,11 @@ Critério de aceite: `styles.css` usa só tokens; botão primário pill azul 11�
 
 Arquivo: `app.py` (etapas 1–3).
 
-- [x] T-01 Header: `{component.global-nav}` 44px preta + `{component.sub-nav-frosted}` com steps pt-BR `'1 Upload → 2 Parâmetros → 3 Resultados'`; título `'Conciliação Bancária'` em `{typography.display-lg}`.
+- [x] T-01 Header: `{component.sub-nav-frosted}` estático e centralizado com steps pt-BR `'1 Upload → 2 Parâmetros → 3 Resultados'` (`{component.global-nav}` removida: duplicava o título); título `'Conciliação Bancária'` em `{typography.display-lg}` 32px.
 - [x] T-02 Upload (`{component.store-utility-card}`):
-  - [x] dois `st.file_uploader` lado a lado: `'Extrato bancário (CSV ou Excel)'` e `'Lançamentos internos (CSV ou Excel)'`
+  - [x] dois `st.file_uploader` lado a lado: `'Extrato bancário'` e `'Lançamentos internos'`, com nota única de formato/limite/privacidade no cabeçalho da seção
   - [x] 3 `selectbox` por arquivo para `Data`, `Descrição`, `Valor` (default auto-mapeado de S1-T02)
-  - [x] preview 5 linhas por arquivo (`st.dataframe`)
+  - [x] prévias full-width abaixo dos cartões com rótulos pt-BR, datas dd/mm/aaaa, valores em R$ e label dinâmico (`(N linhas)` / `(N erros)`)
   - [x] erros de S1-T04 em tabela pt-BR + botão `{component.button-primary}` `'Conciliar'`
 - [x] T-03 Parâmetros (`{component.configurator-option-chip}` + `{component.search-input}`):
   - [x] `st.slider('Tolerância de dias', 0, 30, 2)` → `date_tolerance_days`
@@ -321,7 +321,7 @@ Critério de aceite: RF-017/018/022 — sem par listado dos dois lados com filtr
 
 ### S3-T04 — Responsivo + acessibilidade (NFR-008, NFR-010)
 
-- [x] Breakpoints 1440/1068/833/734/640/480: ≤734px upload e KPIs empilham 1 coluna, tabelas com scroll horizontal, hero 56→28px.
+- [x] Breakpoints 1440/1068/833/734/640/480: ≤734px upload e KPIs empilham 1 coluna, tabelas com scroll horizontal, hero 32→26px.
 - [x] Alvos ≥ 44×44, labels em todos os inputs, contraste `#1d1d1f` sobre `#fff`, navegação por teclado no Streamlit.
 - [x] Teste manual: 390px (mobile) e 1440px (desktop) sem sobreposição; Lighthouse a11y sem erro crítico.
 
@@ -329,7 +329,7 @@ Critério de aceite: fluxo completo em ≤ 7 cliques mobile e desktop; nenhum te
 
 DoD S3: app roda `streamlit run app.py`, fluxo fim-a-fim com fixtures, visual reprova se fora dos tokens. ✅ Concluída.
 
-Nota S3: `global-nav`/`sub-nav` removidos por decisão do produto (seções já numeradas dispensam steps); aba `Duplicadas` incluída além das 5 previstas.
+Nota S3: `global-nav` removida por decisão do produto (duplicava o título sem agregar navegação); `sub-nav` mantido como stepper estático centralizado; aba `Duplicadas` incluída além das 5 previstas.
 
 ---
 

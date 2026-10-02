@@ -352,7 +352,7 @@ Data,Descrição,Valor
 
 ### 11.5 Componentes
 
-- `{component.global-nav}` black 44px; `{component.sub-nav-frosted}` parchment 80% + blur 52px.
+- `{component.sub-nav-frosted}` parchment 80% + blur, stepper centralizado sem sticky (`{component.global-nav}` removida: duplicava o título sem agregar navegação).
 - `{component.button-primary}` blue pill 11x22px; `{component.button-secondary-pill}` ghost; `{component.button-dark-utility}`; `{component.button-pearl-capsule}`.
 - `{component.product-tile-light}` / parchment / dark; `{component.store-utility-card}` white + hairline + 18px + 24px; `{component.search-input}` pill 44px; `{component.floating-sticky-bar}`; `{component.footer}` parchment.
 
@@ -362,8 +362,8 @@ Data,Descrição,Valor
 
 | Tela | Conteúdo | Tokens / Componentes |
 |---|---|---|
-| T-01 Header + Nav | Título `Conciliação Bancária`, steps (1 Upload → 2 Parâmetros → 3 Resultados) | `{component.global-nav}`, `{component.sub-nav-frosted}`, `{typography.display-lg}` |
-| T-02 Upload | Dois uploaders + mapeamento colunas + preview 5 linhas | `{component.store-utility-card}`, `{rounded.lg}`, `{component.button-primary}` `{rounded.pill}` |
+| T-01 Header + Nav | Título `Conciliação Bancária`, stepper centralizado (1 Upload → 2 Parâmetros → 3 Resultados) | `{component.sub-nav-frosted}`, `{typography.display-lg}` |
+| T-02 Upload | Dois uploaders + mapeamento colunas + prévias full-width com rótulos pt-BR (`Data, Descrição, Valor`), datas dd/mm/aaaa e valores em R$ | `{component.store-utility-card}`, `{rounded.lg}`, `{component.button-primary}` `{rounded.pill}` |
 | T-03 Parâmetros | `tolerancia_dias` 0–30 default 2, `threshold_fuzzy` 0–100 default 85, `tolerancia_valor` default 0.00 | `{component.configurator-option-chip}`, `{component.search-input}` |
 | T-04 KPIs | 5 cards: Total extrato, Total interno, % Auto, % Revisão, % Pendente/Divergente | `{component.store-utility-card}` sem sombra, `{colors.surface-pearl}` |
 | T-05 Resultados | Abas `Conciliadas` / `Para Revisão` / `Pendentes` / `Divergentes` / `Duplicadas` / `Erros` + filtros | `{component.product-tile-light}`, `{component.text-link}` `{colors.primary}` |
@@ -371,7 +371,7 @@ Data,Descrição,Valor
 | T-07 Exportação | Downloads CSV/Excel + `floating-sticky-bar` com KPIs | `{component.floating-sticky-bar}`, `{component.button-pearl-capsule}`, `{component.footer}` |
 | T-08 Erros | Tabela erros + motivo + orientação | `{colors.ink-muted-48}`, `{typography.caption}` |
 
-Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KPIs 1 coluna, tabelas scroll horizontal, hero 56→28px.
+Responsivo: breakpoints 1440/1068/833/734/640/480; ≤734px empilha 1 coluna, KPIs 1 coluna, tabelas scroll horizontal, hero 32→26px.
 
 ---
 

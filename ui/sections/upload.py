@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from src.display import to_amount_text, to_date_text, to_text
 from src.loader import get_preview, load_table, validate_not_empty
 from src.logger import get_logger
 from src.mapping import apply_mapping, auto_map_columns, get_mapping_options
@@ -126,17 +127,43 @@ def _render_source_status(valid: pd.DataFrame, errors: pd.DataFrame) -> None:
     st.badge(f'{total_errors} linhas com erro', icon=':material/warning:', color='orange')
 
 
+def _build_preview_display(raw_frame: pd.DataFrame, mapping: dict) -> pd.DataFrame:
+    '''Build pt-BR preview with display names and formats.'''
+    if raw_frame is None:
+        return pd.DataFrame()
+    preview = get_preview(raw_frame, 5)
+    if not isinstance(mapping, dict):
+        return preview
+    try:
+        date_col = mapping.get('data')
+        desc_col = mapping.get('descricao')
+        value_col = mapping.get('valor')
+        names = list(preview.columns)
+        if date_col not in names or desc_col not in names or value_col not in names:
+            return preview
+        return pd.DataFrame(
+            {
+                'Data': preview[date_col].map(to_date_text),
+                'Descrição': preview[desc_col].map(to_text),
+                'Valor': preview[value_col].map(to_amount_text),
+            }
+        )
+    except (KeyError, ValueError, TypeError, AttributeError):
+        return preview
+
+
 def show_preview_errors(
-    raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str, title: str
+    raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str, title: str, mapping: dict
 ) -> None:
-    '''Show five row preview plus pt-BR error table.'''
+    '''Show preview plus pt-BR error table.'''
     has_errors = error_frame is not None and len(error_frame) > 0
     total_errors = 0 if error_frame is None else len(error_frame)
+    shown = min(5, len(raw_frame)) if raw_frame is not None else 0
     if has_errors:
         label = f'{title} ({total_errors} erros)'
         icon = ':material/warning:'
     else:
-        label = f'{title} (5 linhas)'
+        label = f'{title} ({shown} linhas)'
         icon = ':material/preview:'
     box = st.expander(
         label, expanded=has_errors, icon=icon, on_change='rerun', key=f'{prefix}_preview'
@@ -144,12 +171,12 @@ def show_preview_errors(
     if box.open is False:
         return
     with box:
-        st.markdown('<p class="body-text">Prévia (5 linhas)</p>', unsafe_allow_html=True)
-        st.dataframe(get_preview(raw_frame, 5), hide_index=True)
+        display = _build_preview_display(raw_frame, mapping)
+        st.dataframe(display, hide_index=True, column_config=build_column_config(display))
         if has_errors:
             st.markdown('<p class="body-text">Erros encontrados</p>', unsafe_allow_html=True)
-            display = format_error_display(error_frame)
-            st.dataframe(display, hide_index=True, column_config=build_column_config(display))
+            errors = format_error_display(error_frame)
+            st.dataframe(errors, hide_index=True, column_config=build_column_config(errors))
         else:
             st.caption('Sem erros.')
 
@@ -162,18 +189,18 @@ def render_single_upload(
     if uploaded is None:
         st.session_state[frame_key] = None
         st.session_state[error_key] = pd.DataFrame()
-        return None, None, None
+        return None, None, None, None
     raw_frame = fetch_raw_table(uploaded)
     if raw_frame is None:
         st.session_state[frame_key] = None
         st.session_state[error_key] = pd.DataFrame()
-        return None, None, None
+        return None, None, None, None
     mapping = choose_mapping(raw_frame, prefix)
     valid, errors = finalize_source(raw_frame, mapping, source)
     st.session_state[frame_key] = valid
     st.session_state[error_key] = errors
     _render_source_status(valid, errors)
-    return raw_frame, valid, errors
+    return raw_frame, valid, errors, mapping
 
 
 def render_upload_section() -> None:
@@ -190,15 +217,19 @@ def render_upload_section() -> None:
     left_upload, right_upload = st.columns(2, gap='medium')
     with left_upload:
         with st.container(border=True):
-            left_raw, _, left_errors = render_single_upload(
+            left_raw, _, left_errors, left_mapping = render_single_upload(
                 'Extrato bancário', 'statement', 'statement_df', 'statement_errors', 'statement'
             )
     with right_upload:
         with st.container(border=True):
-            right_raw, _, right_errors = render_single_upload(
+            right_raw, _, right_errors, right_mapping = render_single_upload(
                 'Lançamentos internos', 'ledger', 'ledger_df', 'ledger_errors', 'ledger'
             )
     if left_raw is not None:
-        show_preview_errors(left_raw, left_errors, 'statement', 'Prévia do extrato')
+        show_preview_errors(
+            left_raw, left_errors, 'statement', 'Prévia do extrato', left_mapping
+        )
     if right_raw is not None:
-        show_preview_errors(right_raw, right_errors, 'ledger', 'Prévia dos lançamentos')
+        show_preview_errors(
+            right_raw, right_errors, 'ledger', 'Prévia dos lançamentos internos', right_mapping
+        )

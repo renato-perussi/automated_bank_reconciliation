@@ -45,7 +45,7 @@ Fluxo em 7 passos:
 1. Abra o endereço mostrado no terminal.
 2. Envie o extrato bancário em CSV ou Excel.
 3. Envie os lançamentos internos em CSV ou Excel.
-4. Confira as colunas Data, Descrição e Valor e veja a prévia de 5 linhas.
+4. Confira o mapeamento das colunas Data, Descrição e Valor e veja as prévias formatadas abaixo dos cartões.
 5. Ajuste a tolerância de dias, a similaridade mínima e a tolerância de valor.
 6. Clique em Conciliar e veja os indicadores e as abas Conciliadas, Para revisão, Pendentes, Divergentes, Duplicadas e Erros. Em Para revisão, escolha o par, compare lado a lado e clique em Confirmar ou Rejeitar. Use Desfazer última ação para reverter.
 7. Clique em Baixar Excel para o relatório completo e em Baixar CSV de exceções para a lista só com pendências. A barra fixa mostra os indicadores e o rodapé mostra a versão.
