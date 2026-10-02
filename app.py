@@ -19,7 +19,6 @@ from src.review_state import history_moment as _history_time
 from ui.components import (
     load_styles,
     render_footer,
-    render_global_nav,
     render_header,
     render_subnav,
 )
@@ -177,7 +176,6 @@ def main() -> None:
     )
     init_state()
     load_styles()
-    render_global_nav()
     render_header()
     render_subnav()
     render_upload_section()

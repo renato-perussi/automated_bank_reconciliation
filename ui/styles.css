@@ -26,25 +26,12 @@ body {
   background: #ffffff;
 }
 
-.global-nav {
-  background: #000000;
-  color: #ffffff;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: -0.12px;
+.hero-section {
+  background: #ffffff;
+  max-width: 730px;
+  margin: 0 auto;
+  padding: 32px 20px 16px;
   border-radius: 0;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-}
-
-.global-nav-meta {
-  opacity: 0.7;
 }
 
 .sub-nav-frosted {
@@ -55,14 +42,55 @@ body {
   min-height: 52px;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
+  justify-content: center;
   padding: 12px 20px;
   font-size: 14px;
   border-radius: 0;
-  position: sticky;
-  top: 44px;
-  z-index: 19;
+}
+
+.step-list {
+  width: 100%;
+  max-width: 730px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 0;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.step-item + .step-item::before {
+  content: '›';
+  color: #86868b;
+  margin: 0 12px 0 8px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.step-label {
+  white-space: nowrap;
 }
 
 .step-active {
@@ -70,9 +98,21 @@ body {
   font-weight: 600;
 }
 
+.step-active .step-num {
+  background: #0066cc;
+  color: #ffffff;
+  border: 1px solid #0066cc;
+}
+
 .step-done {
   color: #0066cc;
   font-weight: 400;
+}
+
+.step-done .step-num {
+  background: transparent;
+  color: #0066cc;
+  border: 1px solid #0066cc;
 }
 
 .step-todo {
@@ -80,8 +120,10 @@ body {
   font-weight: 400;
 }
 
-.step-sep {
-  color: #c7c7cc;
+.step-todo .step-num {
+  background: #ffffff;
+  color: #616161;
+  border: 1px solid #d2d2d7;
 }
 
 .footer {
@@ -109,6 +151,12 @@ body {
   list-style: none;
 }
 
+.footer-guide summary:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .footer-guide summary::-webkit-details-marker {
   display: none;
 }
@@ -132,11 +180,12 @@ body {
 
 .display-lg {
   font-family: 'SF Pro Display', system-ui, -apple-system, Inter, sans-serif;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.374px;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
   color: #1d1d1f;
+  margin: 0 0 8px;
 }
 
 .display-md {
@@ -154,7 +203,15 @@ body {
   line-height: 1.47;
   letter-spacing: -0.374px;
   color: #1d1d1f;
-  background: #ffffff;
+}
+
+.hero-section .body-text {
+  color: #333333;
+}
+
+.hero-subtitle {
+  max-width: 600px;
+  margin: 0;
 }
 
 .label-strong {
@@ -333,6 +390,13 @@ div[data-testid='stFileUploaderDropzoneInstructions'] {
   display: none !important;
 }
 
+div[data-testid='stFileUploaderDropzone'] {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 16px !important;
+}
+
 div[data-testid='stFileUploader'] button[data-testid='stBaseButton-secondary'] {
   background: transparent !important;
   color: #0066cc !important;
@@ -496,22 +560,22 @@ div[data-testid='stDownloadButton'] > button:focus {
   outline-offset: 2px;
 }
 
-@media (max-width: 1068px) {
-  .display-lg {
-    font-size: 40px;
-  }
-}
-
 @media (max-width: 640px) {
   .display-lg {
-    font-size: 34px;
+    font-size: 28px;
   }
   .display-md {
     font-size: 28px;
   }
+  .hero-section {
+    padding: 24px 16px 12px;
+  }
   .sub-nav-frosted {
     font-size: 13px;
     padding: 10px 16px;
+  }
+  .step-item + .step-item::before {
+    margin: 0 8px 0 6px;
   }
   .exception-hero {
     font-size: 24px;
@@ -519,19 +583,28 @@ div[data-testid='stDownloadButton'] > button:focus {
 }
 
 @media (max-width: 480px) {
-  .display-lg {
-    font-size: 28px;
-  }
   .display-md {
     font-size: 28px;
-  }
-  .global-nav-meta {
-    display: none;
   }
   .exception-hero {
     font-size: 24px;
   }
   .footer {
     padding: 20px 16px;
+  }
+}
+
+@media (max-width: 419px) {
+  .display-lg {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-num {
+    transition: none;
+  }
+  div.stButton > button {
+    transition: none;
   }
 }

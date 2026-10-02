@@ -120,21 +120,26 @@ def _render_source_status(valid: pd.DataFrame, errors: pd.DataFrame) -> None:
     '''Show valid error badges after mapping.'''
     total_valid = 0 if valid is None else len(valid)
     total_errors = 0 if errors is None else len(errors)
+    st.badge(f'{total_valid} linhas válidas', icon=':material/check:', color='green')
     if total_errors == 0:
-        st.badge(f'{total_valid} válidas', icon=':material/check:', color='green')
         return
-    st.badge(f'{total_valid} válidas', icon=':material/check:', color='green')
-    st.badge(f'{total_errors} com erro', icon=':material/warning:', color='orange')
+    st.badge(f'{total_errors} linhas com erro', icon=':material/warning:', color='orange')
 
 
 def show_preview_errors(
-    raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str
+    raw_frame: pd.DataFrame, error_frame: pd.DataFrame, prefix: str, title: str
 ) -> None:
     '''Show five row preview plus pt-BR error table.'''
     has_errors = error_frame is not None and len(error_frame) > 0
+    total_errors = 0 if error_frame is None else len(error_frame)
+    if has_errors:
+        label = f'{title} ({total_errors} erros)'
+        icon = ':material/warning:'
+    else:
+        label = f'{title} (5 linhas)'
+        icon = ':material/preview:'
     box = st.expander(
-        'Prévia e erros', expanded=has_errors, icon=':material/preview:', on_change='rerun',
-        key=f'{prefix}_preview',
+        label, expanded=has_errors, icon=icon, on_change='rerun', key=f'{prefix}_preview'
     )
     if box.open is False:
         return
@@ -146,55 +151,54 @@ def show_preview_errors(
             display = format_error_display(error_frame)
             st.dataframe(display, hide_index=True, column_config=build_column_config(display))
         else:
-            st.caption('Sem erros. Colunas esperadas: Data, Descrição, Valor.')
+            st.caption('Sem erros.')
 
 
 def render_single_upload(
     uploader_label: str, source: str, frame_key: str, error_key: str, prefix: str
-) -> None:
-    '''Render one uploader with mapping preview errors.'''
+) -> tuple:
+    '''Render one uploader with mapping and status.'''
     uploaded = st.file_uploader(uploader_label, type=['csv', 'xls', 'xlsx'], key=f'{prefix}_up')
-    st.markdown(
-        '<p class="upload-note">Limite 20 MB por arquivo • CSV ou Excel</p>',
-        unsafe_allow_html=True,
-    )
     if uploaded is None:
-        st.caption('Exemplo: Data, Descrição, Valor • 10/09/2026, Fornecedor X, -2500')
-        return
+        st.session_state[frame_key] = None
+        st.session_state[error_key] = pd.DataFrame()
+        return None, None, None
     raw_frame = fetch_raw_table(uploaded)
     if raw_frame is None:
-        return
+        st.session_state[frame_key] = None
+        st.session_state[error_key] = pd.DataFrame()
+        return None, None, None
     mapping = choose_mapping(raw_frame, prefix)
     valid, errors = finalize_source(raw_frame, mapping, source)
     st.session_state[frame_key] = valid
     st.session_state[error_key] = errors
     _render_source_status(valid, errors)
-    show_preview_errors(raw_frame, errors, prefix)
+    return raw_frame, valid, errors
 
 
 def render_upload_section() -> None:
     '''Render title plus two upload cards side by side.'''
     st.markdown('<h2 class="display-md">1. Upload dos arquivos</h2>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="body-text">Envie o extrato e os lançamentos internos em CSV ou Excel.</p>',
+        '<p class="body-text">Selecione os dois arquivos. Nada sai deste computador.</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="upload-note">CSV ou Excel, até 20 MB por arquivo</p>',
         unsafe_allow_html=True,
     )
     left_upload, right_upload = st.columns(2, gap='medium')
     with left_upload:
         with st.container(border=True):
-            render_single_upload(
-                'Extrato bancário (CSV ou Excel)',
-                'statement',
-                'statement_df',
-                'statement_errors',
-                'statement',
+            left_raw, _, left_errors = render_single_upload(
+                'Extrato bancário', 'statement', 'statement_df', 'statement_errors', 'statement'
             )
     with right_upload:
         with st.container(border=True):
-            render_single_upload(
-                'Lançamentos internos (CSV ou Excel)',
-                'ledger',
-                'ledger_df',
-                'ledger_errors',
-                'ledger',
+            right_raw, _, right_errors = render_single_upload(
+                'Lançamentos internos', 'ledger', 'ledger_df', 'ledger_errors', 'ledger'
             )
+    if left_raw is not None:
+        show_preview_errors(left_raw, left_errors, 'statement', 'Prévia do extrato')
+    if right_raw is not None:
+        show_preview_errors(right_raw, right_errors, 'ledger', 'Prévia dos lançamentos')

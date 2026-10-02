@@ -21,19 +21,12 @@ def load_styles() -> None:
 
 
 def render_header() -> None:
-    '''Render main title and subtitle.'''
-    st.markdown('<h1 class="display-lg">Conciliação Bancária</h1>', unsafe_allow_html=True)
+    '''Render hero title and subtitle.'''
     st.markdown(
-        '<p class="body-text">Compare o extrato com os lançamentos internos em poucos passos.</p>',
-        unsafe_allow_html=True,
-    )
-
-
-def render_global_nav() -> None:
-    '''Render thin black utility bar.'''
-    st.markdown(
-        '<div class="global-nav"><span>Conciliação Bancária</span>'
-        '<span class="global-nav-meta">Local e offline • Limite 20 MB</span></div>',
+        '<header class="hero-section">'
+        '<h1 class="display-lg">Conciliação Bancária</h1>'
+        '<p class="body-text hero-subtitle">Compare o extrato com os lançamentos '
+        'internos em poucos passos.</p></header>',
         unsafe_allow_html=True,
     )
 
@@ -58,16 +51,34 @@ def _step_class(position: int, active: int) -> str:
     return 'step-todo'
 
 
+def _step_marker(position: int, state: str) -> str:
+    '''Return check for done steps else position number.'''
+    if state == 'step-done':
+        return '✓'
+    return str(position)
+
+
+def _step_item(position: int, label: str, active: int) -> str:
+    '''Build single stepper list item with pill number.'''
+    state = _step_class(position, active)
+    marker = _step_marker(position, state)
+    current = ' aria-current="step"' if position == active else ''
+    return (
+        f'<li class="step-item {state}"{current}>'
+        f'<span class="step-num" aria-hidden="true">{marker}</span>'
+        f'<span class="step-label">{label}</span></li>'
+    )
+
+
 def render_subnav() -> None:
     '''Render frosted stepper with funnel state.'''
     active = current_step()
-    first = _step_class(1, active)
-    second = _step_class(2, active)
-    third = _step_class(3, active)
+    first = _step_item(1, 'Upload', active)
+    second = _step_item(2, 'Parâmetros', active)
+    third = _step_item(3, 'Resultados', active)
     st.markdown(
-        f'<div class="sub-nav-frosted"><span class="{first}">1 Upload</span>'
-        f'<span class="step-sep">→</span><span class="{second}">2 Parâmetros</span>'
-        f'<span class="step-sep">→</span><span class="{third}">3 Resultados</span></div>',
+        '<nav class="sub-nav-frosted" aria-label="Progresso">'
+        f'<ol class="step-list">{first}{second}{third}</ol></nav>',
         unsafe_allow_html=True,
     )
 

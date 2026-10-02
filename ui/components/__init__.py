@@ -24,7 +24,6 @@ from ui.components.navigation import (
     current_step,
     load_styles,
     render_footer,
-    render_global_nav,
     render_header,
     render_subnav,
 )
@@ -55,7 +54,6 @@ __all__ = [
     'format_pct',
     'load_styles',
     'render_footer',
-    'render_global_nav',
     'render_header',
     'render_kpi_card',
     'render_kpi_grid',
