@@ -3,7 +3,8 @@
 import pandas as pd
 import streamlit as st
 
-from ui.components.base import _display_amount, _display_date, _display_text
+from src.labels import reason_short as _shared_reason_short
+from ui.components.base import _display_amount, _display_date, _display_text, side_triple
 
 
 def render_review_cards(detail: pd.Series) -> None:
@@ -17,7 +18,7 @@ def render_review_cards(detail: pd.Series) -> None:
     days = _display_text(detail.get('Diferença dias'))
     value = _display_text(detail.get('Diferença valor'))
     score = _display_text(detail.get('Similaridade'))
-    rule = _display_text(detail.get('Regra'))
+    motive = _shared_reason_short(_display_text(detail.get('Motivo')))
     left_col, right_col = st.columns(2)
     with left_col:
         with st.container(border=True):
@@ -33,13 +34,29 @@ def render_review_cards(detail: pd.Series) -> None:
         st.badge(f'{days} dia(s)', icon=':material/schedule:', color='gray')
         st.badge(value, icon=':material/payments:', color='gray')
         st.badge(f'Similaridade {score}', icon=':material/analytics:', color='gray')
-        st.badge(rule, icon=':material/rule:', color='gray')
+        if motive != '—':
+            st.badge(motive, icon=':material/info:', color='gray')
 
 
-def review_option_label(row: pd.Series) -> str:
-    '''Build rich select label from raw match row.'''
-    pair = str(row.get('match_id', '—'))
-    days = str(row.get('day_diff', '—'))
-    score = str(row.get('description_score', '—'))
-    rule = str(row.get('rule_id', '—'))
-    return f'{pair} • {days} dia(s) • similaridade {score} • {rule}'
+def _short_description(text: object, limit: int = 45) -> str:
+    '''Truncate long description keeping single line label.'''
+    clean = _display_text(text)
+    if len(clean) <= limit:
+        return clean
+    return clean[:limit].rstrip() + '…'
+
+
+def review_option_label(row: pd.Series, statement_frame: object = None) -> str:
+    '''Build user friendly select label from extrato triple.'''
+    motive = _shared_reason_short(_display_text(row.get('reason')))
+    if statement_frame is None:
+        return motive
+    date_val, desc_val, amount_val = side_triple(statement_frame, row.get('statement_idx'))
+    parts = [
+        _display_date(date_val),
+        _short_description(desc_val),
+        _display_amount(amount_val),
+    ]
+    if motive and motive != '—':
+        parts.append(motive)
+    return ' • '.join(parts)

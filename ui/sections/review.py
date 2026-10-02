@@ -3,23 +3,18 @@
 import pandas as pd
 import streamlit as st
 
-from src.labels import reason_label as _shared_reason_label
 from src.review_state import confirm_pair_state, filtered_review_rows, reject_pair_state
 from ui.components import build_match_display, render_review_cards, review_option_label
 from ui.sections.history import render_history
 
 
-def _reason_label(raw: object) -> str:
-    '''Translate internal motive code to pt-BR text.'''
-    return _shared_reason_label(raw)
-
-
 def _build_lookup(available: object) -> dict:
-    '''Index rich labels by match id.'''
+    '''Index friendly labels by match id.'''
+    statement_frame = st.session_state.get('statement_df')
     lookup: dict = {}
     for _, item in available.iterrows():
         pair = str(item.get('match_id'))
-        lookup[pair] = review_option_label(item)
+        lookup[pair] = review_option_label(item, statement_frame)
     return lookup
 
 
@@ -46,6 +41,7 @@ def _render_feedback() -> None:
 
 def _render_review_actions(chosen: str) -> None:
     '''Render confirm reject buttons plus feedback history.'''
+    st.markdown('<div class="review-gap"></div>', unsafe_allow_html=True)
     confirm_col, reject_col = st.columns(2)
     with confirm_col:
         confirm = st.button(
@@ -54,6 +50,7 @@ def _render_review_actions(chosen: str) -> None:
         )
         if confirm:
             confirm_pair_state(st.session_state, str(chosen))
+            st.session_state['results_tab'] = 'potential'
             st.rerun()
     with reject_col:
         reject = st.button(
@@ -62,6 +59,7 @@ def _render_review_actions(chosen: str) -> None:
         )
         if reject:
             reject_pair_state(st.session_state, str(chosen))
+            st.session_state['results_tab'] = 'potential'
             st.rerun()
     _render_feedback()
     render_history()
@@ -76,11 +74,15 @@ def render_pair_detail(row: pd.Series) -> None:
     if detail is None:
         return
     render_review_cards(detail)
-    st.markdown(
-        '<p class="body-text motivo-line"><span class="label-strong">Motivo:</span> '
-        f'{_reason_label(detail.get("Motivo"))}</p>',
-        unsafe_allow_html=True,
-    )
+
+
+def _remaining_label(total: int) -> str:
+    '''Build pt-BR remaining pairs caption.'''
+    if total <= 0:
+        return 'Nenhum par para revisar.'
+    if total == 1:
+        return 'Falta 1 par para revisar.'
+    return f'Faltam {total} pares para revisar.'
 
 
 def _render_empty_review() -> None:
@@ -113,6 +115,7 @@ def render_review_section() -> None:
         ' — extrato x interno</p>',
         unsafe_allow_html=True,
     )
+    st.caption(_remaining_label(len(available)))
     chosen, row = _pick_review_row(available)
     render_pair_detail(row)
     _render_review_actions(chosen)

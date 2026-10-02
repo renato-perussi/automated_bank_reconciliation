@@ -16,4 +16,5 @@ def render_history() -> None:
     st.dataframe(display, hide_index=True, column_config=build_column_config(display))
     if st.button('Desfazer última ação', key='undo_review', type='secondary'):
         undo_last_review_state(st.session_state)
+        st.session_state['results_tab'] = 'potential'
         st.rerun()

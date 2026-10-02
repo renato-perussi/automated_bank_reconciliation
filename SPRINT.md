@@ -308,14 +308,13 @@ Critério de aceite: upload → mapeamento → parâmetros → `Conciliar` em �
 Arquivo: `app.py` (etapas 4–6).
 
 - [x] T-04 KPIs (5 `{component.store-utility-card}` sem sombra, fundo `{colors.surface-pearl}`):
-  - [x] `'Total extrato'`, `'Total interno'`, `'% Conciliado'`, `'% Para revisão'`, `'% Pendente/Divergente'` + barra `st.progress`
-  - [x] `'Taxa de exceção'` em destaque (= `1 - % auto`)
-- [x] T-05 Resultados (`{component.product-tile-light}` + abas pt-BR):
-  - [x] `st.tabs(['Conciliadas', 'Para revisão', 'Pendentes', 'Divergentes', 'Erros'])`
-  - [x] cada aba `st.dataframe` com colunas pt-BR + filtros `st.text_input('Buscar descrição')` (`{component.search-input}` pill) + `st.slider('Valor')` + `st.date_input('Período')`
+  - [x] `'Total extrato'`, `'Total interno'`, `'% Conciliado'`, `'% Revisão'`, `'% Pendente'` + linha próxima ação (`N pares aguardam revisão • M itens sem par`) + `'Taxa de exceção'` em destaque (= `1 - % auto`, sem barra de progresso)
+- [x] T-05 Resultados (`{component.product-tile-light}` + 6 abas pt-BR com contagens vivas):
+  - [x] `st.tabs` com 6 abas pt-BR (contagens pós-revisão manual via `active_frame`, mostradas só quando > 0; `st.session_state['results_tab']` + `default=` preserva a aba após Confirmar/Rejeitar/Desfazer/Conciliar, pois labels dinâmicos resetam a seleção; densidade via CSS (`stTab 12px` + ícone `12px` + `tablist gap 6px`) para 6 abas com ícone+contagem sem scroll (`13px` avaliado no browser: cabe mas com folga zero; `12px` mantém headroom para contagens de 4 dígitos))
+  - [x] Conciliadas/Para revisão/Divergentes em `st.dataframe` lado a lado com `Par ID` fixo + coluna `'Ação manual'` só quando há marcados; Duplicadas em lista single-side (`Par ID, Base, Data, Descrição, Valor, Regra, Motivo`); filtros `st.text_input('Buscar descrição')` (`{component.search-input}` pill) + `st.slider('Valor')` + `st.date_input('Período')`
   - [x] RF-017: `'Extrato sem par'` e `'Interno sem par'` em tabelas separadas na aba Pendentes
-- [x] T-06 Revisão lado a lado:
-  - [x] `st.columns(2)`: esquerda extrato, direita interno + `day_diff`, `value_diff`, `description_score`, `rule_id` traduzidos: `'Diferença dias'`, `'Diferença valor'`, `'Score'`, `'Regra'`
+- [x] T-06 Revisão lado a lado (tabela com Filtros em cima, painel abaixo):
+  - [x] `st.columns(2)`: esquerda extrato, direita interno + `day_diff`, `value_diff`, `description_score` traduzidos + motivo curto (`reason_short`) no lugar do `rule_id` no badge; select amigável (`data • descrição ≤45 • valor • motivo`, sem códigos); legenda `Faltam N pares para revisar`
   - [x] botões `{component.button-primary}` `'Confirmar'` e `{component.button-secondary-pill}` `'Rejeitar'` (44×44 mín)
   - [x] confirmar → `'conciliada_manual'` + log (`review_action` + timestamp); rejeitar → volta para pendente; reversível na sessão (RN-10)
 

@@ -7,8 +7,8 @@ from ui.components.base import (
     _display_amount,
     _display_date,
     _display_text,
-    _lookup_field,
     format_brl,
+    side_triple,
 )
 
 
@@ -36,22 +36,59 @@ def build_match_display(
     ]
     marked = manual_ids if isinstance(manual_ids, set) else set()
     if match_frame is None or len(match_frame) == 0:
+        frame = pd.DataFrame(columns=columns)
+    else:
+        rows = [
+            _build_single_row(item, statement_frame, ledger_frame, marked)
+            for _, item in match_frame.iterrows()
+        ]
+        frame = pd.DataFrame(rows, columns=columns)
+    if frame.empty or not frame['Ação manual'].ne('').any():
+        frame = frame.drop(columns=['Ação manual'])
+    return frame
+
+
+def _duplicate_source_label(source: object) -> str:
+    '''Map duplicate source code to pt-BR base name.'''
+    text = str(source)
+    if text == 'statement':
+        return 'Extrato'
+    if text == 'ledger':
+        return 'Interno'
+    return '—'
+
+
+def _build_duplicate_row(
+    item: pd.Series, statement_frame: pd.DataFrame, ledger_frame: pd.DataFrame
+) -> dict:
+    '''Build single side row reading only the duplicated base.'''
+    if str(item.get('source')) == 'statement':
+        date_val, desc_val, amount_val = side_triple(statement_frame, item.get('statement_idx'))
+    else:
+        date_val, desc_val, amount_val = side_triple(ledger_frame, item.get('ledger_idx'))
+    return {
+        'Par ID': _display_text(item.get('match_id')),
+        'Base': _duplicate_source_label(item.get('source')),
+        'Data': _display_date(date_val),
+        'Descrição': _display_text(desc_val),
+        'Valor': _display_amount(amount_val),
+        'Regra': _display_text(item.get('rule_id')),
+        'Motivo': _shared_reason_label(item.get('reason')),
+    }
+
+
+def build_duplicate_display(
+    dup_frame: pd.DataFrame, statement_frame: pd.DataFrame, ledger_frame: pd.DataFrame
+) -> pd.DataFrame:
+    '''Build single side list for intra base duplicates.'''
+    columns = ['Par ID', 'Base', 'Data', 'Descrição', 'Valor', 'Regra', 'Motivo']
+    if dup_frame is None or len(dup_frame) == 0:
         return pd.DataFrame(columns=columns)
     rows = [
-        _build_single_row(item, statement_frame, ledger_frame, marked)
-        for _, item in match_frame.iterrows()
+        _build_duplicate_row(item, statement_frame, ledger_frame)
+        for _, item in dup_frame.iterrows()
     ]
     return pd.DataFrame(rows, columns=columns)
-
-
-def _side_triple(source: pd.DataFrame, idx: object) -> tuple:
-    '''Extract date description amount triple for index.'''
-    date_val = _lookup_field(source, idx, ['Data', 'event_date', 'normalized_date'])
-    desc_val = _lookup_field(source, idx, ['Descrição', 'description', 'normalized_description'])
-    amount_val = _lookup_field(
-        source, idx, ['Valor', 'amount', 'normalized_value', 'normalized_amount']
-    )
-    return (date_val, desc_val, amount_val)
 
 
 def _build_single_row(
@@ -62,10 +99,10 @@ def _build_single_row(
     second = item.get('ledger_idx')
     pair = item.get('match_id')
     manual = 'Confirmada manualmente' if pair in marked else ''
-    statement_vals = _side_triple(statement_frame, first)
-    ledger_vals = _side_triple(ledger_frame, second)
+    statement_vals = side_triple(statement_frame, first)
+    ledger_vals = side_triple(ledger_frame, second)
     return {
-        'Par ID': pair if pair is not None else '—',
+        'Par ID': _display_text(pair),
         'Data extrato': _display_date(statement_vals[0]),
         'Descrição extrato': _display_text(statement_vals[1]),
         'Valor extrato': _display_amount(statement_vals[2]),
@@ -75,7 +112,7 @@ def _build_single_row(
         'Diferença dias': item.get('day_diff'),
         'Diferença valor': format_brl(item.get('value_diff')),
         'Similaridade': item.get('description_score'),
-        'Regra': item.get('rule_id'),
+        'Regra': _display_text(item.get('rule_id')),
         'Motivo': _shared_reason_label(item.get('reason')),
         'Ação manual': manual,
     }

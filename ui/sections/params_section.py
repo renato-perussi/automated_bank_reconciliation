@@ -162,6 +162,7 @@ def render_concile_button() -> None:
             st.session_state['results_params'] = dict(params)
             st.session_state['manual_confirmed'] = set()
             st.session_state['manual_rejected'] = set()
+            st.session_state['results_tab'] = 'auto'
             st.success('Conciliação concluída. Veja os resultados abaixo.')
         except ValueError as exc:
             st.error(str(exc))

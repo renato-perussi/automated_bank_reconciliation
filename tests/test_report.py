@@ -93,7 +93,7 @@ def test_calc_kpis_keys() -> None:
 def test_format_brl_values() -> None:
     '''Currency formats pt-BR keeping decimal exact.'''
     assert format_brl(Decimal('4800')) == 'R$ 4.800,00'
-    assert format_brl(Decimal('-2500')) == 'R$ -2.500,00'
+    assert format_brl(Decimal('-2500')) == '-R$ 2.500,00'
     assert format_brl(Decimal('0')) == 'R$ 0,00'
     assert format_brl(None) == '—'
 

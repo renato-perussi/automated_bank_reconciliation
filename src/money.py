@@ -71,9 +71,11 @@ def format_brl(raw_value: object) -> str:
     except (InvalidOperation, ValueError, TypeError):
         return str(raw_value)
     quantized = amount.quantize(Decimal('0.00'))
-    text = f'{quantized:,.2f}'
+    negative = quantized < 0
+    text = f'{abs(quantized):,.2f}'
     text = text.replace(',', 'X').replace('.', ',').replace('X', '.')
-    return f'R$ {text}'
+    prefix = '-R$' if negative else 'R$'
+    return f'{prefix} {text}'
 
 
 def normalize_decimal_marks(core: str) -> str:

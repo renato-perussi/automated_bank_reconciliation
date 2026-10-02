@@ -219,10 +219,6 @@ body {
   font-weight: 600;
 }
 
-.motivo-line {
-  margin-top: 12px !important;
-}
-
 div[data-testid='stVerticalBlock']:has(
     > div[data-testid='stElementContainer'] > div[data-testid='stFileUploader']
   ) {
@@ -262,6 +258,10 @@ div[data-testid='stVerticalBlock']:has(
 .review-divider {
   border-top: 1px solid #e0e0e0;
   margin: 24px 0 16px;
+}
+
+.review-gap {
+  height: 8px;
 }
 
 div.stButton > button {
@@ -369,13 +369,22 @@ div[data-testid='stWidgetLabel'] p {
   color: #1d1d1f !important;
 }
 
-button[data-baseweb='tab'] {
+div[data-testid='stTab'] {
   color: #1d1d1f !important;
+  font-size: 12px !important;
 }
 
-button[data-baseweb='tab'][aria-selected='true'] {
+div[data-testid='stTab'] p span {
+  font-size: 12px !important;
+}
+
+div[data-testid='stTab'][aria-selected='true'] {
   color: #0066cc !important;
   border-bottom-color: #0066cc !important;
+}
+
+div[role='tablist'] {
+  gap: 6px !important;
 }
 
 div[data-testid='stAlertContainer'] {

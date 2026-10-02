@@ -22,6 +22,22 @@ _REASON_PT = {
     'duplicada_suspeita': 'Duplicada suspeita',
 }
 
+_REASON_SHORT_PT = {
+    'regra_composta_ok': 'Confere',
+    'descricao_baixa_similaridade': 'Baixa similaridade',
+    'descricao_divergente': 'Descrição divergente',
+    'divergencia_centavos': 'Centavos',
+    'divergencia_valor_descricao': 'Valor e descrição',
+    'ambiguidade_multipla': 'Múltiplos candidatos',
+    'sem_candidato': 'Sem candidato',
+    'data_fora_tolerancia': 'Data fora da tolerância',
+    'valor_fora_tolerancia': 'Valor fora da tolerância',
+    'sinal_bloqueado': 'Sinal oposto',
+    'duplicada_suspeita': 'Duplicada suspeita',
+}
+
+_REASON_SHORT_BY_LABEL = {long: _REASON_SHORT_PT[code] for code, long in _REASON_PT.items()}
+
 
 def status_label(category: object) -> str:
     '''Map internal category to pt-BR status.'''
@@ -31,6 +47,18 @@ def status_label(category: object) -> str:
 def reason_label(raw: object) -> str:
     '''Translate internal motive code to pt-BR text.'''
     return _REASON_PT.get(str(raw), str(raw))
+
+
+def reason_short(raw: object) -> str:
+    '''Map reason code or long label to short badge text.'''
+    if raw is None:
+        return '—'
+    text = str(raw).strip()
+    if text == '' or text.lower() in ('nan', 'nat', 'none', '—'):
+        return '—'
+    if text in _REASON_SHORT_PT:
+        return _REASON_SHORT_PT[text]
+    return _REASON_SHORT_BY_LABEL.get(text, text)
 
 
 def manual_label(action: object) -> str:

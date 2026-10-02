@@ -54,6 +54,8 @@ def init_state() -> None:
         st.session_state['ledger_errors'] = pd.DataFrame()
     if 'feedback' not in st.session_state:
         st.session_state['feedback'] = None
+    if 'results_tab' not in st.session_state:
+        st.session_state['results_tab'] = 'auto'
 
 
 def save_temp_file(uploaded_file: object) -> object:

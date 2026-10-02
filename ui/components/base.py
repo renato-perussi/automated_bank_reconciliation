@@ -27,6 +27,16 @@ def _lookup_field(source: pd.DataFrame, idx: object, fields: list) -> object:
     return '—' if found is None else found
 
 
+def side_triple(source: pd.DataFrame, idx: object) -> tuple:
+    '''Extract date description amount triple for index.'''
+    date_val = _lookup_field(source, idx, ['Data', 'event_date', 'normalized_date'])
+    desc_val = _lookup_field(source, idx, ['Descrição', 'description', 'normalized_description'])
+    amount_val = _lookup_field(
+        source, idx, ['Valor', 'amount', 'normalized_value', 'normalized_amount']
+    )
+    return (date_val, desc_val, amount_val)
+
+
 def _display_text(raw: object) -> str:
     '''Format cell value with empty fallback.'''
     return _shared_text(raw)
