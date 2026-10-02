@@ -98,7 +98,7 @@ Os dois relatórios guardam o retrato dos parâmetros (tolerância de dias, simi
 
 | Mensagem na tela | O que fazer |
 |---|---|
-| Formato não suportado. Envie CSV ou Excel. | Envie arquivo .csv, .xls ou .xlsx. PDF e txt não entram. |
+| Formato não suportado. Envie CSV ou Excel. | Envie arquivo .csv ou .xlsx. PDF e txt não entram. |
 | Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor. | Confira se o arquivo tem cabeçalho e ao menos 1 linha. |
 | Arquivo acima de 20 MB. | Divida o arquivo em meses menores e envie de novo. |
 | Coluna obrigatória não encontrada: Valor. Mapeie manualmente. | Nos campos Data, Descrição e Valor, escolha a coluna certa de cada arquivo. |
@@ -137,21 +137,21 @@ Os dois comandos precisam ficar verdes antes de avançar para a próxima etapa.
 
 ## Pastas do projeto
 
-- `app.py`: tela fina (194 linhas) que só monta os painéis e chama as seções.
+- `app.py`: tela fina (99 linhas) que só monta os painéis e chama as seções.
 - `src/`: motor e serviços (leitura, normalização, comparação, classificação e relatórios). Fachadas finas com a lógica em pacotes:
   - `src/display.py`: textos, datas e valores para tela e relatório.
   - `src/normalization/` + `src/normalize.py`: datas, valores, sinais, descrições e tabelas.
   - `src/filtering/` + `src/filters.py`: texto, valor, período e contadores (`result_filters.py` usa na tela).
   - `src/review/` + `src/review_state.py`: confirmação, desfazer e histórico da revisão manual.
-  - `src/reporting/`: relatórios (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`).
+  - `src/reporting/`: relatórios (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`, `display_guards`).
   - `src/classification/`: classificação (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`).
   - `src/filters.py`, `src/review_state.py`, `src/export_service.py`: filtros de tela, estado da revisão manual e bytes de exportação.
   - `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py`: bases compartilhadas sem duplicação.
 - `ui/`: peças visuais da tela (tokens, cabeçalho, cartões e tabelas).
-- `ui/sections/`: seções da tela (`upload`, `params_section`, `results`, `result_filters`, `review`, `history`, `export_section`).
+- `ui/sections/`: seções da tela (`upload/(file_io,mapping_ui,preview_ui,section)`, `params_section`, `results/(kpis,match_tab,pending_tab,duplicate_tab,error_tab,tabs)`, `result_filters`, `review`, `history`, `export_section`).
 - `ui/components/`: base, navegação, KPIs, tabelas e cartões de revisão.
 - `scripts/`: apoio como `bench.py` para medir 5000 x 5000 em menos de 30 segundos.
-- `tests/`: 207 testes verdes, cobertura 90% (`test_filters.py`, `test_review_state.py`, `test_export_service.py`, `test_reporting_split.py`, `test_classification_split.py` além dos testes S0–S4).
+- `tests/`: 251 testes verdes, cobertura 93% (`test_filters.py`, `test_review_state.py`, `test_export_service.py`, `test_reporting_split.py`, `test_classification_split.py`, `test_display_guards.py`, `test_app_thin.py`, `test_guards_edge.py`, `test_loader_edge.py`, `test_filter_nan.py` além dos testes S0–S4).
 - `tests/fixtures/`: arquivos pequenos de exemplo para testes, incluindo a pasta `matrix/` com variações.
 - `data/examples/`: cópia dos exemplos para você testar à mão.
 - `data/output/`: onde saem os relatórios se você salvar à mão (esta pasta é ignorada no git).

@@ -83,43 +83,49 @@ def render_subnav() -> None:
     )
 
 
+def _concept_upload_items() -> list:
+    '''Return upload guide bullets in pt-BR.'''
+    return [
+        'Suba o extrato bancário e os lançamentos internos em CSV ou '
+        'Excel (até 20 MB cada).',
+        'Só três colunas importam — data, descrição e valor — e valem '
+        'apelidos como date, histórico e amount.',
+        'Se o app não reconhecer alguma coluna, o painel Mapear colunas '
+        'abre sozinho.',
+        'Colunas extras não atrapalham, mas não entram na conciliação.',
+        'Confira as prévias, ajuste os parâmetros só se precisar e clique '
+        'em Conciliar.',
+    ]
+
+
+def _concept_result_items() -> list:
+    '''Return result guide bullets in pt-BR.'''
+    return [
+        'Conciliadas não pedem ação.',
+        'Para revisão pede seu olho: escolha o par, compare lado a lado e '
+        'clique em Confirmar ou Rejeitar (dá para desfazer).',
+        'Pendentes não acharam par; Divergentes têm valor parecido com '
+        'descrição bem diferente; Duplicadas se repetem dentro da mesma base.',
+    ]
+
+
+def _concept_export_items() -> list:
+    '''Return export guide bullets in pt-BR.'''
+    return [
+        'O Excel traz 8 abas com tudo, incluindo suas decisões manuais e '
+        'a versão do motor.',
+        'O CSV traz só as exceções para tratar.',
+        'Se mudar algum parâmetro depois de conciliar, clique em Conciliar '
+        'de novo antes de baixar.',
+    ]
+
+
 def _concepts_items() -> list:
     '''Return guide title plus bullet pairs in pt-BR.'''
     return [
-        (
-            '1. Envie os arquivos e clique em Conciliar',
-            [
-                'Suba o extrato bancário e os lançamentos internos em CSV ou '
-                'Excel (até 20 MB cada).',
-                'Só três colunas importam — data, descrição e valor — e valem '
-                'apelidos como date, histórico e amount.',
-                'Se o app não reconhecer alguma coluna, o painel Mapear colunas '
-                'abre sozinho.',
-                'Colunas extras não atrapalham, mas não entram na conciliação.',
-                'Confira as prévias, ajuste os parâmetros só se precisar e clique '
-                'em Conciliar.',
-            ],
-        ),
-        (
-            '2. Leia o resultado por aba',
-            [
-                'Conciliadas não pedem ação.',
-                'Para revisão pede seu olho: escolha o par, compare lado a lado e '
-                'clique em Confirmar ou Rejeitar (dá para desfazer).',
-                'Pendentes não acharam par; Divergentes têm valor parecido com '
-                'descrição bem diferente; Duplicadas se repetem dentro da mesma base.',
-            ],
-        ),
-        (
-            '3. Baixe os relatórios',
-            [
-                'O Excel traz 8 abas com tudo, incluindo suas decisões manuais e '
-                'a versão do motor.',
-                'O CSV traz só as exceções para tratar.',
-                'Se mudar algum parâmetro depois de conciliar, clique em Conciliar '
-                'de novo antes de baixar.',
-            ],
-        ),
+        ('1. Envie os arquivos e clique em Conciliar', _concept_upload_items()),
+        ('2. Leia o resultado por aba', _concept_result_items()),
+        ('3. Baixe os relatórios', _concept_export_items()),
     ]
 
 

@@ -10,6 +10,7 @@ from src.reporting.details import (
     _single_side_row,
     _single_side_rows,
 )
+from src.reporting.display_guards import blank_metric, blank_text
 from src.reporting.errors import (
     _clean_error_frame,
     _concat_error_frames,
@@ -103,6 +104,8 @@ __all__ = [
     '_write_log',
     '_write_param_block',
     '_write_resumo',
+    'blank_metric',
+    'blank_text',
     'build_conciliation_workbook',
     'build_exceptions_csv',
     'build_rule_log',

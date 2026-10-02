@@ -8,6 +8,7 @@ from src.guards import is_missing
 from src.logger import get_logger
 from src.reporting.details import _collect_all_detail
 from src.reporting.determinism import _new_deterministic_workbook, _save_deterministic_bytes
+from src.reporting.display_guards import blank_metric, blank_text
 from src.reporting.errors import _normalize_error_frames
 from src.reporting.formatting import _as_number
 from src.reporting.headers import (
@@ -30,6 +31,9 @@ from src.reporting.summary import (
 )
 
 logger = get_logger(__name__)
+
+_blank_log_text = blank_text
+_blank_log_metric = blank_metric
 
 __all__ = [
     '_kpi_labels',
@@ -87,24 +91,6 @@ def _write_log(book: Workbook, log_frame: pd.DataFrame, snapshot: dict) -> None:
     sheet.freeze_panes = 'A2'
 
 
-def _blank_log_text(raw: object) -> str:
-    '''Return blank for missing pandas log text.'''
-    if raw is None:
-        return ''
-    if is_missing(raw):
-        return ''
-    return raw
-
-
-def _blank_log_metric(raw: object) -> object:
-    '''Return blank for missing pandas log metric.'''
-    if raw is None:
-        return ''
-    if is_missing(raw):
-        return ''
-    return raw
-
-
 def _log_display_values(item: object, text: str) -> dict:
     '''Map internal log row to pt-BR display values.'''
     snapshot = item.get('params_snapshot')
@@ -118,15 +104,15 @@ def _log_display_values(item: object, text: str) -> dict:
     else:
         motive = _reason_label(reason)
     return {
-        'Par ID': _blank_log_text(item.get('match_id')),
-        'Regra ID': _blank_log_text(item.get('rule_id')),
-        'Diferença dias': _blank_log_metric(item.get('day_diff')),
+        'Par ID': blank_text(item.get('match_id')),
+        'Regra ID': blank_text(item.get('rule_id')),
+        'Diferença dias': blank_metric(item.get('day_diff')),
         'Diferença valor': _as_number(item.get('value_diff')),
-        'Score descrição': _blank_log_metric(item.get('description_score')),
+        'Score descrição': blank_metric(item.get('description_score')),
         'Motivo': motive,
-        'Código erro': _blank_log_text(item.get('error_code')),
+        'Código erro': blank_text(item.get('error_code')),
         'Ação manual': _manual_label(item.get('review_action', '')),
-        'Data/Hora ação': _blank_log_text(item.get('timestamp')),
+        'Data/Hora ação': blank_text(item.get('timestamp')),
         'Parâmetros': detail,
     }
 

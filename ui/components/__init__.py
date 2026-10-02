@@ -20,6 +20,9 @@ from ui.components.match_display import (
     build_match_display,
 )
 from ui.components.navigation import (
+    _concept_export_items,
+    _concept_result_items,
+    _concept_upload_items,
     _concepts_items,
     _step_class,
     current_step,
@@ -35,6 +38,9 @@ from ui.components.tables import build_column_config, render_status_table
 __all__ = [
     '_build_pending_row',
     '_build_single_row',
+    '_concept_export_items',
+    '_concept_result_items',
+    '_concept_upload_items',
     '_concepts_items',
     '_display_amount',
     '_display_date',

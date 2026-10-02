@@ -1,9 +1,13 @@
 '''Ingestion of bank and ledger tables.'''
 
 import csv
+import tempfile
+from decimal import InvalidOperation
 from pathlib import Path
+from zipfile import BadZipFile
 
 import pandas as pd
+from openpyxl.utils.exceptions import InvalidFileException
 
 from src.config import MAX_FILE_SIZE_MB, SUPPORTED_EXTENSIONS
 from src.logger import get_logger
@@ -72,17 +76,35 @@ def validate_not_empty(frame: pd.DataFrame) -> None:
 
 
 def _ensure_safe_path(target: Path) -> None:
-    '''Reject path traversal attempts.'''
+    '''Reject traversal null bytes and absolute outside work temp.'''
     if '..' in target.parts:
         raise ValueError('Nome de arquivo inválido. Verifique o arquivo enviado.')
     if '\x00' in str(target):
         raise ValueError('Nome de arquivo inválido. Verifique o arquivo enviado.')
+    if target.is_absolute():
+        _ensure_absolute_allowed(target)
 
 
 def _ensure_supported_extension(target: Path) -> None:
     '''Reject unsupported extensions with pt-BR message.'''
     if target.suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise ValueError('Formato não suportado. Envie CSV ou Excel.')
+
+
+def _ensure_absolute_allowed(target: Path) -> None:
+    '''Allow absolute only inside work dir or system temp.'''
+    try:
+        resolved = target.resolve()
+    except OSError as exc:
+        logger.warning(f'Path resolve failed with {exc}')
+        raise ValueError('Nome de arquivo inválido. Verifique o arquivo enviado.') from exc
+    work = Path.cwd().resolve()
+    temp = Path(tempfile.gettempdir()).resolve()
+    if resolved.is_relative_to(work):
+        return
+    if resolved.is_relative_to(temp):
+        return
+    raise ValueError('Nome de arquivo inválido. Verifique o arquivo enviado.')
 
 
 def _ensure_size_limit(target: Path) -> None:
@@ -103,10 +125,22 @@ def _load_csv(target: Path) -> tuple[pd.DataFrame, dict]:
 
 
 def _load_excel(target: Path) -> tuple[pd.DataFrame, dict]:
-    '''Read first workbook sheet with openpyxl engine.'''
-    book = pd.ExcelFile(target, engine='openpyxl')
-    name = book.sheet_names[0] if book.sheet_names else None
-    frame = pd.read_excel(target, sheet_name=0, engine='openpyxl')
+    '''Read first xlsx sheet rejecting legacy xls zip errors.'''
+    if target.suffix.lower() != '.xlsx':
+        raise ValueError('Formato não suportado. Envie CSV ou Excel.')
+    try:
+        book = pd.ExcelFile(target, engine='openpyxl')
+        name = book.sheet_names[0] if book.sheet_names else None
+        frame = pd.read_excel(target, sheet_name=0, engine='openpyxl')
+    except ValueError as exc:
+        logger.warning(f'Excel load failed with {exc}')
+        raise ValueError('Não foi possível ler o arquivo. Verifique o formato.') from exc
+    except (BadZipFile, InvalidFileException, KeyError, OSError, RuntimeError) as exc:
+        logger.warning(f'Excel load failed with {exc}')
+        raise ValueError('Não foi possível ler o arquivo. Verifique o formato.') from exc
+    except InvalidOperation as exc:
+        logger.warning(f'Excel load failed with {exc}')
+        raise ValueError('Não foi possível ler o arquivo. Verifique o formato.') from exc
     meta = {'encoding': None, 'delimiter': None, 'sheet': name}
     logger.info(f'Loaded excel sheet {name} with {len(frame)} rows')
     return frame, meta

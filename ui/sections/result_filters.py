@@ -25,9 +25,7 @@ def reset_match_filters(prefix: str) -> None:
     st.session_state[f'{prefix}_filter_epoch'] = epoch + 1
 
 
-def _reset_match_filters(prefix: str) -> None:
-    '''Clear search value filters remounting dates.'''
-    return reset_match_filters(prefix)
+_reset_match_filters = reset_match_filters
 
 
 def match_period_inputs(prefix: str) -> tuple:
@@ -41,9 +39,7 @@ def match_period_inputs(prefix: str) -> tuple:
     return normalize_period((raw_start, raw_end))
 
 
-def _match_period_inputs(prefix: str) -> tuple:
-    '''Collect start end dates from two pickers.'''
-    return match_period_inputs(prefix)
+_match_period_inputs = match_period_inputs
 
 
 def filter_match_display(display: pd.DataFrame, prefix: str) -> pd.DataFrame:
@@ -72,9 +68,7 @@ def filter_match_display(display: pd.DataFrame, prefix: str) -> pd.DataFrame:
         return result
 
 
-def _filter_match_display(display: pd.DataFrame, prefix: str) -> pd.DataFrame:
-    '''Apply search value period filters inside expander.'''
-    return filter_match_display(display, prefix)
+_filter_match_display = filter_match_display
 
 
 def reset_pending_filters() -> None:
@@ -91,9 +85,7 @@ def reset_pending_filters() -> None:
     st.session_state['pending_filter_epoch'] = epoch + 1
 
 
-def _reset_pending_filters() -> None:
-    '''Clear pending filters remounting date pickers.'''
-    return reset_pending_filters()
+_reset_pending_filters = reset_pending_filters
 
 
 def pending_period_inputs() -> tuple:
@@ -107,9 +99,7 @@ def pending_period_inputs() -> tuple:
     return normalize_period((raw_start, raw_end))
 
 
-def _pending_period_inputs() -> tuple:
-    '''Collect start end dates from two pickers.'''
-    return pending_period_inputs()
+_pending_period_inputs = pending_period_inputs
 
 
 def filter_pending_sides(left_base: pd.DataFrame, right_base: pd.DataFrame) -> tuple:
@@ -138,6 +128,4 @@ def filter_pending_sides(left_base: pd.DataFrame, right_base: pd.DataFrame) -> t
         return (left_out, right_out)
 
 
-def _filter_pending_sides(left_base: pd.DataFrame, right_base: pd.DataFrame) -> tuple:
-    '''Apply pending search value period inside expander.'''
-    return filter_pending_sides(left_base, right_base)
+_filter_pending_sides = filter_pending_sides

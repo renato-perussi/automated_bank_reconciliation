@@ -1,25 +1,25 @@
 # AGENTS.md — automated_bank_reconciliation
 
 ## Commands (venv exists, always use `.venv/bin/`)
-- App: `.venv/bin/streamlit run app.py` (entrypoint `app.py:main`, ~195 lines).
-- All tests: `.venv/bin/python -m pytest -q` (207 passed, `testpaths = tests`).
+- App: `.venv/bin/streamlit run app.py` (entrypoint `app.py:main`, 99 lines).
+- All tests: `.venv/bin/python -m pytest -q` (251 passed, `testpaths = tests`).
 - Single file: `.venv/bin/python -m pytest tests/test_matcher.py -q`.
-- Coverage: `.venv/bin/python -m pytest --cov=src -q` (~90%, motor >=80%).
+- Coverage: `.venv/bin/python -m pytest --cov=src -q` (93%, motor >=80%).
 - Lint: `.venv/bin/python -m ruff check src tests app.py ui scripts` — must be clean.
 - Lint + tests green before closing any task (per `README.md` / `SPRINT.md`).
 - Perf: `.venv/bin/python -m scripts.bench` — asserts 5000×5000 < 30s. Slow, do not run casually.
 
 ## Pipeline (read in this order when debugging)
-- `src/loader.py`: encoding `utf-8→latin1`, delimiter `,→;`, first Excel sheet via openpyxl, 20 MB reject, `validate_not_empty`. Server limit mirrors it (`.streamlit/config.toml` `maxUploadSize = 20`).
+- `src/loader.py`: encoding `utf-8→latin1`, delimiter `,→;`, first xlsx sheet via openpyxl (`.xls` rejeitado), 20 MB reject, `validate_not_empty`. Server limit mirrors it (`.streamlit/config.toml` `maxUploadSize = 20`).
 - `src/mapping.py`: `normalize_header` strips accent/case; internals `event_date/description/amount`, display stays `Data/Descrição/Valor`.
 - `src/normalize.py` (39-line facade) + `src/normalization/` (`dates,amounts,signs,descriptions,tables`) + `src/validate.py:collect_errors`: valid vs `Linha/Motivo/Orientação` split; one bad row never aborts batch.
 - `src/matcher.py:find_candidates` (~119 lines): block by `amount ± tolerance + sign`, then date window; `token_set_ratio` fuzzy. Shared bits live in `src/entries.py` (`collect_entries`, ledger/amount index, `is_signal_blocked`), `src/guards.py`, `src/money.py` (`Decimal` only), `src/params.py` (`build_params`, snapshot), `src/labels.py` (pt-BR labels).
-- `src/classifier.py` (87) and `src/report.py` (111) are thin facades — real logic is in `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`: 5 tables `auto/potential/pending/divergent/duplicate`) and `src/reporting/` (`details`, `errors`, `rule_log`, `workbook`, `exceptions`, `kpis`, `formatting`, `lookups`, `headers`, `snapshots`, `determinism`, `summary`). Edit the subpackage, keep the facade re-exporting (`__all__` is used by tests).
+- `src/classifier.py` (87) and `src/report.py` (111) are thin facades — real logic is in `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`: 5 tables `auto/potential/pending/divergent/duplicate`) and `src/reporting/` (`details`, `errors`, `rule_log`, `workbook`, `exceptions`, `kpis`, `formatting`, `lookups`, `headers`, `snapshots`, `determinism`, `summary`, `display_guards`). Edit the subpackage, keep the facade re-exporting (`__all__` is used by tests).
 - `src/display.py`: single source for `NaN→fallback` (`—` UI vs `''` report), BRL via `clean_brl_text`, dates. `reporting/formatting+lookups` and `ui/components/base` delegate here — do not duplicate.
 - `src/filters.py` (34-line facade) + `src/filtering/` (`text,values,dates,bounds,counters`): `filter_by_period` keeps unparseable dates, `filter_by_value` parses `R$ 2.500,00`; slider bounds use `display` frame, not `filtered`.
 - `src/review_state.py` (26-line facade) + `src/review/` (`transitions,counts,history,selection`).
 - Reports (via `src/reporting/`): xlsx 8 tabs (`Resumo,Conciliadas,Para_Revisao,Pendentes,Divergentes,Duplicadas,Erros,Log_Regras`) byte-deterministic (`ZipInfo.date_time` + props fixed `2026-01-01`) + exceptions csv sorted by `Valor normalizado desc`, both embed params snapshot + `APP_VERSION`. Returns bytes, never writes files.
-- `app.py:main` only assembles panels; sections live in `ui/sections/` (`upload`, `params_section`, `results`, `result_filters`, `review`, `history`, `export_section`). `ui/components/` is a package (`base,navigation,kpis,tables,match_display,pending_display,review_cards`), not a file. Pure UI filters in `src/filters.py`, review state in `src/review_state.py`, export bytes in `src/export_service.py`. Display only, no engine logic in `ui/`.
+- `app.py:main` only assembles panels; sections live in `ui/sections/` (`upload/(file_io,mapping_ui,preview_ui,section)`, `params_section`, `results/(kpis,match_tab,pending_tab,duplicate_tab,error_tab,tabs)`, `result_filters`, `review`, `history`, `export_section`). `ui/components/` is a package (`base,navigation,kpis,tables,match_display,pending_display,review_cards`), not a file. Pure UI filters in `src/filters.py`, review state in `src/review_state.py`, export bytes in `src/export_service.py`. Display only, no engine logic in `ui/`.
 
 ## Engine invariants (do not break)
 - Value alone never yields `auto`; sign mismatch blocks even if value+date match (`RN-03` → `pending/sinal_bloqueado`).

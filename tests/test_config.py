@@ -28,7 +28,7 @@ def test_file_limits() -> None:
 
 def test_supported_extensions() -> None:
     '''Ensure only CSV and Excel are accepted.'''
-    assert config.SUPPORTED_EXTENSIONS == ('.csv', '.xls', '.xlsx')
+    assert config.SUPPORTED_EXTENSIONS == ('.csv', '.xlsx')
 
 
 def test_required_columns() -> None:

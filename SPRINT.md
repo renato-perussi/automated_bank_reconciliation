@@ -75,7 +75,7 @@ Depende de: nada. RF/RN: NFR-011, NFR-013. NFR-013a.
   - [x] `VALUE_TOLERANCE = Decimal('0.00')` # default tolerância de valor
   - [x] `MAX_FILE_SIZE_MB = 20` # limite por arquivo
   - [x] `MAX_ROWS_WARNING = 20000` # aviso de volume
-  - [x] `SUPPORTED_EXTENSIONS = ('.csv', '.xls', '.xlsx')` # formatos aceitos
+  - [x] `SUPPORTED_EXTENSIONS = ('.csv', '.xlsx')` # formatos aceitos
   - [x] `PT_REQUIRED_COLUMNS = ('Data', 'Descrição', 'Valor')` # colunas pt-BR obrigatórias
   - [x] `APP_VERSION = '1.0.0'` # versão do motor p/ snapshot
 - [x] Criar `src/logger.py` ou bloco em `config.py` com `get_logger(name)` via `logging` (sem `print`).
@@ -130,14 +130,14 @@ Arquivo: `src/loader.py`. Funções em inglês, mensagens pt-BR.
 - [x] Implementar `load_table(path)`:
   - [x] validar extensão em `SUPPORTED_EXTENSIONS`, senão erro pt-BR `'Formato não suportado. Envie CSV ou Excel.'`
   - [x] validar tamanho `<= MAX_FILE_SIZE_MB`, senão erro pt-BR `'Arquivo acima de 20 MB.'`
-  - [x] CSV via `pandas.read_csv` com encoding/delimiter detectados; Excel via `pandas.read_excel(engine='openpyxl')` primeira aba
+  - [x] CSV via `pandas.read_csv` com encoding/delimiter detectados; Excel xlsx via `pandas.read_excel(engine='openpyxl')` primeira aba (`.xls` legado rejeitado)
   - [x] retornar `DataFrame` bruto + metadados (`encoding`, `delimiter`, `sheet`)
 - [x] Implementar `get_preview(df, n=5)` retornando 5 primeiras linhas para UI.
 - [x] Implementar `validate_not_empty(df)` gerando erro bloqueante pt-BR `'Arquivo vazio. Verifique o modelo com colunas Data, Descrição, Valor.'`
 - [x] Sanitizar nome de arquivo contra path traversal (NFR-006).
 - [x] Testar com `matrix/` do S0-T02 + arquivo 20 MB (preview < 3s, NFR-002).
 
-Critério de aceite: RF-001/RF-002 — 3 formatos abrem, preview 5 linhas, `.pdf` rejeitado com mensagem pt-BR clara; arquivo vazio bloqueia.
+Critério de aceite: RF-001/RF-002 — 2 formatos abrem, preview 5 linhas, `.pdf` e `.xls` rejeitados com mensagem pt-BR clara; arquivo vazio bloqueia.
 
 ### S1-T02 — Mapeamento de colunas pt-BR → variáveis em inglês (RF-003)
 
@@ -444,8 +444,8 @@ Cada task só fecha com `pytest` da sua área verde + `ruff check` limpo + aceit
 Objetivo: reduzir arquivos grandes a fachadas finas com pacotes testáveis, sem alterar RF-001–RF-022, RN-01–RN-10, NFRs nem Casos A–D. S0–S4 seguem congeladas acima.
 
 - [x] S5-T01 — Bases compartilhadas: `src/guards.py`, `src/money.py`, `src/params.py`, `src/entries.py`, `src/labels.py` eliminando duplicação de `matcher`/`classifier`/`report`.
-- [x] S5-T02 — `app.py` 962→190 linhas: `src/filters.py`, `src/review_state.py`, `src/export_service.py` + `ui/sections/` (`upload`, `params_section`, `results`, `review`, `history`, `export_section`). Wrappers compat preservados, `main` com 7 `render_*`.
-- [x] S5-T03 — `src/report.py` 791→111 e `src/classifier.py` 553→93: `src/reporting/` (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`) + `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`). Bytes xlsx/csv e 5 tabelas idênticos.
-- [x] S5-T04 — Testes: 167→201 verdes, cobertura 93% (`test_filters`, `test_review_state`, `test_export_service`, `test_reporting_split`, `test_classification_split`). Planos em `docs/superpowers/plans/`.
+- [x] S5-T02 — `app.py` 962→99 linhas: `src/filters.py`, `src/review_state.py`, `src/export_service.py` + `ui/sections/` (`upload/(file_io,mapping_ui,preview_ui,section)`, `params_section`, `results/(kpis,match_tab,pending_tab,duplicate_tab,error_tab,tabs)`, `review`, `history`, `export_section`). Wrappers compat preservados, `main` com 7 `render_*`.
+- [x] S5-T03 — `src/report.py` 791→111 e `src/classifier.py` 553→93: `src/reporting/` (`headers`, `formatting`, `kpis`, `snapshots`, `lookups`, `details`, `errors`, `rule_log`, `workbook`, `exceptions`, `determinism`, `summary`, `display_guards`) + `src/classification/` (`rules`, `ambiguity`, `duplicates`, `pending`, `tables`). Bytes xlsx/csv e 5 tabelas idênticos.
+- [x] S5-T04 — Testes: 167→251 verdes, cobertura 93% (`test_filters`, `test_review_state`, `test_export_service`, `test_reporting_split`, `test_classification_split`, `test_display_guards`, `test_app_thin`, `test_guards_edge`, `test_loader_edge`, `test_filter_nan`). Planos em `docs/superpowers/plans/`.
 
-Critério de aceite: `ruff check src tests app.py ui scripts` limpo + `pytest -q` 201 verdes + auditoria `PASS` + invariantes (valor isolado nunca auto, sinal bloqueia RN-03, ambiguidade nunca auto RN-07, centavos nunca auto RN-08) preservadas.
+Critério de aceite: `ruff check src tests app.py ui scripts` limpo + `pytest -q` 251 verdes + auditoria `PASS` + invariantes (valor isolado nunca auto, sinal bloqueia RN-03, ambiguidade nunca auto RN-07, centavos nunca auto RN-08) preservadas.

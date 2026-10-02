@@ -1,45 +1,22 @@
 '''Matched and single side detail rows.'''
 
 from src.guards import is_missing
+from src.reporting.display_guards import blank_metric, blank_text
 from src.reporting.formatting import _as_number
 from src.reporting.headers import _manual_label, _reason_label, _status_label
 from src.reporting.lookups import _extract_side
 
-
-def _display_pair_id(pair: object) -> str:
-    '''Return blank for missing pandas pair id.'''
-    if pair is None:
-        return ''
-    if is_missing(pair):
-        return ''
-    return pair
-
-
-def _display_rule_id(rule: object) -> str:
-    '''Return blank for missing pandas rule id.'''
-    if rule is None:
-        return ''
-    if is_missing(rule):
-        return ''
-    return rule
+_display_pair_id = blank_text
+_display_rule_id = blank_text
+_display_metric_number = blank_metric
 
 
 def _display_reason_motive(reason: object) -> str:
     '''Return blank or pt-BR motive for pandas reason.'''
-    if reason is None:
+    clean = blank_text(reason)
+    if clean == '':
         return ''
-    if is_missing(reason):
-        return ''
-    return _reason_label(reason)
-
-
-def _display_metric_number(metric: object) -> object:
-    '''Return blank for missing pandas metric number.'''
-    if metric is None:
-        return ''
-    if is_missing(metric):
-        return ''
-    return metric
+    return _reason_label(clean)
 
 
 def _matched_rows(

@@ -67,24 +67,6 @@ def _collect_all_pending_rows(
     return rows
 
 
-def _pending_side(
-    entries: list,
-    other_amounts: list,
-    other_ordered: list,
-    matched_side: set,
-    dups: set,
-    snapshot: dict,
-    tolerance: Decimal,
-    limit: int,
-    source: str,
-) -> list:
-    '''Collect pending rows for single side.'''
-    return _pending_rows(
-        entries, other_amounts, other_ordered, matched_side, dups, source, tolerance, limit,
-        snapshot,
-    )
-
-
 def _build_pending_table(
     statement_df: pd.DataFrame,
     ledger_df: pd.DataFrame,

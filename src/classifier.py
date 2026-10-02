@@ -23,7 +23,6 @@ from src.classification.pending import (
     _is_signal_blocked,
     _pending_row,
     _pending_rows,
-    _pending_side,
     _resolve_pending_limits,
 )
 from src.classification.rules import (
@@ -75,7 +74,6 @@ __all__ = [
     '_params_snapshot',
     '_pending_row',
     '_pending_rows',
-    '_pending_side',
     '_pick_best',
     '_resolve_pending_limits',
     '_sort_key',

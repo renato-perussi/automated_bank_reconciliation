@@ -16,7 +16,7 @@ def parse_amount_number(raw: object) -> object:
 
 
 def filter_by_value(frame: pd.DataFrame, low: float, high: float) -> pd.DataFrame:
-    '''Filter display rows by display float value window.'''
+    '''Filter display rows keeping unparseable visible by design via fillna.'''
     if frame is None or len(frame) == 0:
         return frame
     fields = ['Valor', 'Valor extrato', 'Valor interno']
